@@ -18,7 +18,12 @@ package com.intellij.debugger.streams.trace;
 import com.intellij.debugger.engine.evaluation.EvaluateException;
 import com.intellij.debugger.streams.remote.InvokeMethodProxy;
 import com.intellij.debugger.streams.remote.ProxyBase;
-import com.intellij.debugger.streams.wrapper.MethodCall;
+import com.intellij.debugger.streams.trace.smart.TraceElement;
+import com.intellij.debugger.streams.trace.smart.TraceElementImpl;
+import com.intellij.debugger.streams.trace.smart.handler.PeekCall;
+import com.intellij.debugger.streams.trace.smart.resolve.TraceInfo;
+import com.intellij.debugger.streams.trace.smart.resolve.impl.ValuesOrderInfo;
+import com.intellij.debugger.streams.wrapper.StreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.xdebugger.XDebugSession;
@@ -29,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Vitaliy.Bibaev
@@ -60,13 +66,16 @@ public class MapStreamTracerImpl extends EvaluateExpressionTracerBase {
 
   @NotNull
   @Override
-  protected TracingResult interpretResult(@NotNull InvokeMethodProxy result) {
+  protected TracingResult interpretResult(@NotNull StreamChain chain, @NotNull InvokeMethodProxy result) {
     final Map<Integer, Map<Integer, Value>> map;
     try {
       map = convertToLocalMap(result);
-      final ArrayList<Map<Integer, Value>> trace = new ArrayList<>(map.size());
-      map.keySet().stream().filter(x -> x >= 0).map(map::get).forEach(trace::add);
-      Value res = map.get(-1).get(-1);
+      final ArrayList<TraceInfo> trace = new ArrayList<>(map.size());
+      map.keySet().stream().filter(x -> x >= 0)
+        .map(x -> map.get(x).keySet().stream()
+          .collect(Collectors.toMap(k -> k, k -> (TraceElement)new TraceElementImpl(k, map.get(x).get(k)))))
+        .forEach(x -> trace.add(new ValuesOrderInfo(x)));
+      final Value res = map.get(-1).get(-1);
       return new MyResult(res, trace);
     }
     catch (EvaluateException e) {
@@ -76,11 +85,11 @@ public class MapStreamTracerImpl extends EvaluateExpressionTracerBase {
 
   @NotNull
   private static StreamChain insertPeeks(@NotNull StreamChain oldChain) {
-    final List<MethodCall> calls = oldChain.getCalls();
-    final List<MethodCall> result = new ArrayList<>();
+    final List<StreamCall> calls = oldChain.getCalls();
+    final List<StreamCall> result = new ArrayList<>();
     for (int i = 0; i < calls.size() - 1; i++) {
       result.add(calls.get(i));
-      result.add(new MyTracingPeekCall(String.format(PEEK_ACTION_FORMAT, i)));
+      result.add(new PeekCall(String.format(PEEK_ACTION_FORMAT, i)));
     }
 
     result.add(calls.get(calls.size() - 1));
@@ -165,31 +174,11 @@ public class MapStreamTracerImpl extends EvaluateExpressionTracerBase {
     }
   }
 
-  private static class MyTracingPeekCall implements MethodCall {
-    private final String myAction;
-
-    MyTracingPeekCall(@NotNull String peekAction) {
-      myAction = peekAction;
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-      return "peek";
-    }
-
-    @NotNull
-    @Override
-    public String getArguments() {
-      return "(" + myAction + ")";
-    }
-  }
-
   private static class MyResult implements TracingResult {
     private final Value myValue;
-    private final List<Map<Integer, Value>> myCalls;
+    private final List<TraceInfo> myCalls;
 
-    MyResult(@Nullable Value streamResult, @NotNull List<Map<Integer, Value>> traces) {
+    MyResult(@Nullable Value streamResult, @NotNull List<TraceInfo> traces) {
       myValue = streamResult;
       myCalls = new ArrayList<>(traces);
     }
@@ -202,7 +191,7 @@ public class MapStreamTracerImpl extends EvaluateExpressionTracerBase {
 
     @NotNull
     @Override
-    public List<Map<Integer, Value>> getTrace() {
+    public List<TraceInfo> getTrace() {
       return Collections.unmodifiableList(myCalls);
     }
   }

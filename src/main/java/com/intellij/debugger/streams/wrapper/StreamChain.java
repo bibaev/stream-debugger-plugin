@@ -19,7 +19,13 @@ import com.intellij.debugger.streams.resolve.ResolvedCall;
 import com.intellij.debugger.streams.resolve.ResolvedCallImpl;
 import com.intellij.debugger.streams.resolve.ResolverFactoryImpl;
 import com.intellij.debugger.streams.resolve.ValuesOrderResolver;
+import com.intellij.debugger.streams.trace.EvaluateExpressionTracerBase;
 import com.intellij.debugger.streams.trace.TracingResult;
+import com.intellij.debugger.streams.trace.smart.TraceElement;
+import com.intellij.debugger.streams.trace.smart.TraceElementImpl;
+import com.intellij.debugger.streams.trace.smart.resolve.TraceInfo;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Pair;
 import com.intellij.psi.*;
 import com.intellij.psi.util.InheritanceUtil;
@@ -59,17 +65,13 @@ public class StreamChain {
     }
   };
 
-  private final List<MethodCall> myCalls;
-
-  private enum CallType {
-    PRODUCER, INTERMEDIATE, TERMINATOR, UNKNOWN
-  }
+  private final List<StreamCall> myCalls;
 
   static {
     SEARCH_RESULT.set(new PsiMethodCallExpression[1]);
   }
 
-  public StreamChain(@NotNull List<MethodCall> calls) {
+  public StreamChain(@NotNull List<StreamCall> calls) {
     myCalls = calls;
   }
 
@@ -77,16 +79,18 @@ public class StreamChain {
   public static StreamChain tryBuildChain(@NotNull PsiElement elementAtCursor) {
     final PsiMethodCallExpression call = tryFindStreamCall(elementAtCursor);
     if (call != null) {
-      final List<MethodCall> streamCalls = new ArrayList<>();
-      streamCalls.add(new ProducerStreamCall(call));
+      final List<StreamCall> streamCalls = new ArrayList<>();
+      final String name = resolveProducerCallName(call);
+      final String args = resolveArguments(call);
+      streamCalls.add(new ProducerStreamCall(name, args));
       PsiElement current = call.getParent();
       while (current != null) {
         if (current instanceof PsiMethodCallExpression) {
-          final PsiMethod method = ((PsiMethodCallExpression)current).resolveMethod();
-          final String methodName = method != null ? method.getName() : null;
-          if (methodName != null && isSupportedStreamOp(method.getName())) {
-            streamCalls.add(new StreamCallImpl((PsiMethodCallExpression)current));
-          }
+          final PsiMethodCallExpression methodCall = (PsiMethodCallExpression)current;
+          final String callName = resolveMethodName(methodCall);
+          final String callArgs = resolveArguments(methodCall);
+          if (callName == null) return null;
+          streamCalls.add(new StreamCallImpl(callName, callArgs, getType(callName)));
         }
 
         current = current.getParent();
@@ -107,20 +111,29 @@ public class StreamChain {
     return tryFindStreamCall(elementAtCursor) != null;
   }
 
-  public List<MethodCall> getCalls() {
+  @NotNull
+  public List<StreamCall> getCalls() {
     return Collections.unmodifiableList(myCalls);
+  }
+
+  public int length() {
+    return myCalls.size();
+  }
+
+  public String getCallName(int ix) {
+    return myCalls.get(ix).getName();
   }
 
   @NotNull
   public String getText() {
-    final Iterator<MethodCall> iterator = myCalls.iterator();
+    final Iterator<StreamCall> iterator = myCalls.iterator();
     final StringBuilder builder = new StringBuilder();
 
     while (iterator.hasNext()) {
       final MethodCall call = iterator.next();
       builder.append(call.getName()).append(call.getArguments());
       if (iterator.hasNext()) {
-        builder.append(".");
+        builder.append(EvaluateExpressionTracerBase.LINE_SEPARATOR).append(".");
       }
     }
 
@@ -134,20 +147,20 @@ public class StreamChain {
     }
 
     final Value res = result.getResult();
-    final List<Map<Integer, Value>> trace = result.getTrace();
+    final List<TraceInfo> trace = result.getTrace();
 
     assert myCalls.size() == trace.size() + 1;
     final List<ResolvedCall> resolvedCalls = new ArrayList<>();
 
-    Map<Value, List<Value>> prevResolved = Collections.emptyMap();
+    Map<TraceElement, List<TraceElement>> prevResolved = Collections.emptyMap();
     for (int i = 1; i < myCalls.size() - 1; i++) {
-      final Map<Integer, Value> prev = trace.get(i - 1);
-      final Map<Integer, Value> next = trace.get(i);
+      final Map<Integer, TraceElement> prev = trace.get(i - 1).getValuesOrder();
+      final Map<Integer, TraceElement> next = trace.get(i).getValuesOrder();
       final MethodCall previousCall = myCalls.get(i - 1);
       final MethodCall currentCall = myCalls.get(i);
 
       final ValuesOrderResolver resolver = ResolverFactoryImpl.getInstance().getResolver(currentCall.getName());
-      final Pair<Map<Value, List<Value>>, Map<Value, List<Value>>> resolved = resolver.resolve(prev, next);
+      final Pair<Map<TraceElement, List<TraceElement>>, Map<TraceElement, List<TraceElement>>> resolved = resolver.resolve(prev, next);
 
       resolvedCalls.add(new ResolvedCallImpl(previousCall, prevResolved, resolved.getFirst()));
       prevResolved = resolved.getSecond();
@@ -156,9 +169,12 @@ public class StreamChain {
     resolvedCalls
       .add(new ResolvedCallImpl(myCalls.get(myCalls.size() - 2), prevResolved, prevResolved));
 
-    resolvedCalls
-      .add(new ResolvedCallImpl(myCalls.get(myCalls.size() - 1), Collections.emptyMap(),
-                                Collections.singletonMap(res, Collections.singletonList(res))));
+    if (res != null) {
+      final TraceElement resultElement = new TraceElementImpl(Integer.MAX_VALUE, res);
+      resolvedCalls
+        .add(new ResolvedCallImpl(myCalls.get(myCalls.size() - 1), Collections.emptyMap(),
+                                  Collections.singletonMap(resultElement, Collections.singletonList(resultElement))));
+    }
 
     return resolvedCalls;
   }
@@ -182,20 +198,34 @@ public class StreamChain {
     return SEARCH_RESULT.get()[0];
   }
 
-  private static boolean isSupportedStreamOp(@NotNull String name) {
-    return !getType(name).equals(CallType.UNKNOWN);
+  @Nullable
+  private static String resolveMethodName(@NotNull PsiMethodCallExpression methodCall) {
+    return ApplicationManager.getApplication().runReadAction((Computable<String>)() -> {
+      final PsiMethod method = methodCall.resolveMethod();
+      return method == null ? null : method.getName();
+    });
   }
 
-  private static CallType getType(@NotNull String name) {
+  @NotNull
+  private static String resolveProducerCallName(@NotNull PsiMethodCallExpression methodCall) {
+    return ApplicationManager.getApplication().runReadAction((Computable<String>)() -> methodCall.getChildren()[0].getText());
+  }
+
+  @NotNull
+  private static String resolveArguments(@NotNull PsiMethodCallExpression methodCall) {
+    return ApplicationManager.getApplication().runReadAction((Computable<String>)() -> methodCall.getArgumentList().getText());
+  }
+
+  private static StreamCallType getType(@NotNull String name) {
     if (SUPPORTED_INTERMEDIATE.contains(name)) {
-      return CallType.INTERMEDIATE;
+      return StreamCallType.INTERMEDIATE;
     }
     if (SUPPORTED_PRODUCERS.contains(name)) {
-      return CallType.PRODUCER;
+      return StreamCallType.PRODUCER;
     }
 
     return SUPPORTED_TERMINATION.contains(name)
-           ? CallType.TERMINATOR
-           : CallType.UNKNOWN;
+           ? StreamCallType.TERMINATOR
+           : StreamCallType.UNKNOWN;
   }
 }
