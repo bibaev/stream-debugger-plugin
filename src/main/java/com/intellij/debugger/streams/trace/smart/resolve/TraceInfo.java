@@ -1,6 +1,7 @@
 package com.intellij.debugger.streams.trace.smart.resolve;
 
 import com.intellij.debugger.streams.trace.smart.TraceElement;
+import com.intellij.debugger.streams.wrapper.StreamCall;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,7 +13,13 @@ import java.util.Map;
  */
 public interface TraceInfo {
   @NotNull
-  Map<Integer, TraceElement> getValuesOrder();
+  StreamCall getCall();
+
+  @NotNull
+  Map<Integer, TraceElement> getValuesOrderBefore();
+
+  @NotNull
+  Map<Integer, TraceElement> getValuesOrderAfter();
 
   @Nullable
   Map<TraceElement, List<TraceElement>> getDirectTrace();

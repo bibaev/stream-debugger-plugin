@@ -18,14 +18,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * @author Vitaliy.Bibaev
  */
 public class MapToArrayTracerImpl extends EvaluateExpressionTracerBase {
-  private static final TraceInfo EMPTY_INFO = new ValuesOrderInfo(Collections.emptyMap());
   private static final Logger LOG = Logger.getInstance(MapToArrayTracerImpl.class);
 
   private static final String RETURN_EXPRESSION = "new java.lang.Object[]{ info, streamResult };" + LINE_SEPARATOR;
@@ -62,8 +60,7 @@ public class MapToArrayTracerImpl extends EvaluateExpressionTracerBase {
     declarationBuilder.append(String.format("final Object[] info = new Object[%d];\n", callCount))
       .append("final java.util.concurrent.atomic.AtomicInteger time = new java.util.concurrent.atomic.AtomicInteger(0);")
       .append(LINE_SEPARATOR);
-    tracingChainCalls.add(calls.get(0));
-    for (int i = 1; i < callCount - 1; i++) {
+    for (int i = 0; i < callCount - 1; i++) {
       final StreamCall call = calls.get(i);
       final String name = call.getName();
 
@@ -115,10 +112,10 @@ public class MapToArrayTracerImpl extends EvaluateExpressionTracerBase {
     final int callCount = chain.length();
     final List<TraceInfo> result = new ArrayList<>(callCount);
     for (int i = 0; i < callCount; i++) {
-      final String callName = chain.getCallName(i);
+      final StreamCall call = chain.getCall(i);
       final Value trace = info.getValue(i);
-      final TraceResolver resolver = ResolverFactory.getInstance().getResolver(callName);
-      final TraceInfo traceInfo = trace == null ? EMPTY_INFO : resolver.resolve(trace);
+      final TraceResolver resolver = ResolverFactory.getInstance().getResolver(call.getName());
+      final TraceInfo traceInfo = trace == null ? ValuesOrderInfo.empty(call) : resolver.resolve(call, trace);
       result.add(traceInfo);
     }
 
