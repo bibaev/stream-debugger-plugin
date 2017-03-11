@@ -16,41 +16,50 @@
 package com.intellij.debugger.streams.ui;
 
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
-import com.intellij.debugger.streams.resolve.ResolvedCall;
-import com.intellij.openapi.project.Project;
+import com.intellij.debugger.streams.trace.smart.TraceElement;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public class CollectionView extends JPanel {
-  private static final int MAX_STREAM_CALL_LENGTH = 60;
+public class CollectionView extends JPanel implements Disposable, TraceContainer {
   private CollectionTree myInstancesTree;
 
-  public CollectionView(@NotNull EvaluationContextImpl evaluationContext, @NotNull ResolvedCall call) {
+  CollectionView(@NotNull EvaluationContextImpl evaluationContext, @NotNull List<TraceElement> values) {
     super(new BorderLayout());
-    add(new JBLabel(stringLimit(call.getName() + call.getArguments())), BorderLayout.NORTH);
-    final Project project = evaluationContext.getProject();
+    add(new JBLabel("stub"), BorderLayout.NORTH);
 
-    myInstancesTree = new CollectionTree(project, call, evaluationContext);
+    myInstancesTree = new CollectionTree(values, evaluationContext);
 
     add(new JBScrollPane(myInstancesTree), BorderLayout.CENTER);
+    Disposer.register(this, myInstancesTree);
   }
 
-  public CollectionTree getTree() {
-    return myInstancesTree;
+  @Override
+  public void dispose() {
+
   }
 
-  private static String stringLimit(@NotNull String str) {
-    if (str.length() < MAX_STREAM_CALL_LENGTH) {
-      return str;
-    }
+  @Override
+  public void highlight(@NotNull List<TraceElement> elements) {
+    myInstancesTree.highlight(elements);
+  }
 
-    return str.substring(0, MAX_STREAM_CALL_LENGTH).trim() + "...";
+  @Override
+  public void select(@NotNull List<TraceElement> elements) {
+    myInstancesTree.select(elements);
+  }
+
+  @Override
+  public void addSelectionListener(@NotNull ValuesSelectionListener listener) {
+    myInstancesTree.addSelectionListener(listener);
   }
 }

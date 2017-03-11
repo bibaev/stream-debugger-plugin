@@ -15,8 +15,8 @@ public class AdvancedStreamTracerAction extends AnAction {
   @Override
   public void actionPerformed(AnActionEvent e) {
     final Project project = e.getProject();
-    if (project != null && Holder.HANDLER.isEnabled(project, e)) {
-      Holder.HANDLER.perform(project, e);
+    if (project != null && Holder.HANDLER.isEnabled(project)) {
+      Holder.HANDLER.perform(project);
     }
   }
 }

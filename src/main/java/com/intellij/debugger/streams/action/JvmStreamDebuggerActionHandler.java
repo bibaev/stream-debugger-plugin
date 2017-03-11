@@ -20,13 +20,18 @@ import com.intellij.debugger.SourcePosition;
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
 import com.intellij.debugger.impl.DebuggerContextImpl;
 import com.intellij.debugger.impl.DebuggerUtilsEx;
-import com.intellij.debugger.streams.resolve.ResolvedCall;
+import com.intellij.debugger.streams.resolve.ResolvedTrace;
+import com.intellij.debugger.streams.resolve.ResolvedTraceImpl;
+import com.intellij.debugger.streams.resolve.ResolverFactoryImpl;
+import com.intellij.debugger.streams.resolve.ValuesOrderResolver;
 import com.intellij.debugger.streams.trace.MapStreamTracerImpl;
 import com.intellij.debugger.streams.trace.TracingCallback;
 import com.intellij.debugger.streams.trace.TracingResult;
+import com.intellij.debugger.streams.trace.smart.resolve.TraceInfo;
 import com.intellij.debugger.streams.ui.TraceWindow;
+import com.intellij.debugger.streams.wrapper.StreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
-import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
@@ -41,6 +46,8 @@ import com.intellij.xdebugger.XDebuggerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -49,7 +56,7 @@ import java.util.List;
 public class JvmStreamDebuggerActionHandler {
   private static final Logger LOG = Logger.getInstance(JvmStreamDebuggerActionHandler.class);
 
-  public void perform(@NotNull Project project, AnActionEvent event) {
+  void perform(@NotNull Project project) {
     final XDebugSession session = XDebuggerManager.getInstance(project).getCurrentSession();
     if (session == null) {
       return;
@@ -57,7 +64,7 @@ public class JvmStreamDebuggerActionHandler {
 
     final PsiElement elementAtCursor = findElementAtCursor(session);
     if (elementAtCursor != null) {
-      final StreamChain chain = StreamChain.tryBuildChain(elementAtCursor);
+      final StreamChain chain = StreamChainBuilder.tryBuildChain(elementAtCursor);
       if (chain != null) {
         handle(session, chain);
       }
@@ -68,7 +75,7 @@ public class JvmStreamDebuggerActionHandler {
     new MapStreamTracerImpl(session).trace(chain, new TracingCallback() {
       @Override
       public void evaluated(@NotNull TracingResult result, @NotNull EvaluationContextImpl context) {
-        final List<ResolvedCall> calls = chain.resolveCalls(result);
+        final List<ResolvedTrace> calls = resolve(result.getTrace());
         ApplicationManager.getApplication()
           .invokeLater(() -> new TraceWindow(context, session.getProject(), calls).show());
       }
@@ -80,10 +87,37 @@ public class JvmStreamDebuggerActionHandler {
     });
   }
 
-  public boolean isEnabled(@NotNull Project project, AnActionEvent event) {
+  boolean isEnabled(@NotNull Project project) {
     final XDebugSession session = XDebuggerManager.getInstance(project).getCurrentSession();
     final PsiElement elementAtCursor = session == null ? null : findElementAtCursor(session);
-    return elementAtCursor != null && StreamChain.checkStreamExists(elementAtCursor);
+    return elementAtCursor != null && StreamChainBuilder.checkStreamExists(elementAtCursor);
+  }
+
+  protected static List<ResolvedTrace> resolve(@NotNull List<TraceInfo> trace) {
+    if (trace.size() == 0) {
+      return Collections.emptyList();
+    }
+
+    final List<ResolvedTrace> result = new ArrayList<>();
+    final TraceInfo producerTrace = trace.get(0);
+    ValuesOrderResolver.Result prevResolved =
+      ResolverFactoryImpl.getInstance().getResolver(producerTrace.getCall().getName()).resolve(producerTrace);
+
+    for (int i = 1; i < trace.size(); i++) {
+      final TraceInfo traceInfo = trace.get(i);
+      final StreamCall currentCall = traceInfo.getCall();
+
+      final ValuesOrderResolver.Result currentResolve =
+        ResolverFactoryImpl.getInstance().getResolver(currentCall.getName()).resolve(traceInfo);
+
+      result.add(
+        new ResolvedTraceImpl(new ArrayList<>(currentResolve.getDirectOrder().keySet()), prevResolved.getReverseOrder(),
+                              currentResolve.getDirectOrder()));
+
+      prevResolved = currentResolve;
+    }
+
+    return result;
   }
 
   @Nullable

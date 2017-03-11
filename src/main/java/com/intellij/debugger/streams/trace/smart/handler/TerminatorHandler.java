@@ -9,8 +9,8 @@ import java.util.List;
 /**
  * @author Vitaliy.Bibaev
  */
-public class ProducerHandler extends HandlerBase {
-  private final PeekTracerHandler myPeekTracerHandler = new PeekTracerHandler(0, "producer");
+public class TerminatorHandler extends HandlerBase {
+  private final PeekTracerHandler myPeekTracerHandler = new PeekTracerHandler(Integer.MAX_VALUE, "terminator");
 
   @NotNull
   @Override
@@ -21,13 +21,13 @@ public class ProducerHandler extends HandlerBase {
   @NotNull
   @Override
   public List<StreamCall> additionalCallsBefore() {
-    return Collections.emptyList();
+    return myPeekTracerHandler.additionalCallsBefore();
   }
 
   @NotNull
   @Override
   public List<StreamCall> additionalCallsAfter() {
-    return myPeekTracerHandler.additionalCallsAfter();
+    return Collections.emptyList();
   }
 
   @NotNull

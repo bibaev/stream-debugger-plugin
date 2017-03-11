@@ -16,13 +16,14 @@
 package com.intellij.debugger.streams.resolve;
 
 import com.intellij.debugger.streams.trace.smart.TraceElement;
-import com.intellij.openapi.util.Pair;
+import com.intellij.debugger.streams.trace.smart.resolve.TraceInfo;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Vitaliy.Bibaev
@@ -57,6 +58,8 @@ public class ResolverFactoryImpl implements ResolverFactory {
       case "sorted":
       case "peek":
         return IDENTITY_RESOLVER;
+      case "distinct":
+        return new DistinctResolver();
       default:
         return EMPTY_RESOLVER;
     }
@@ -65,19 +68,27 @@ public class ResolverFactoryImpl implements ResolverFactory {
   private static class MyEmptyResolver implements ValuesOrderResolver {
     @NotNull
     @Override
-    public Pair<Map<TraceElement, List<TraceElement>>, Map<TraceElement, List<TraceElement>>> resolve(@NotNull Map<Integer, TraceElement> previousCalls,
-                                                                                                      @NotNull Map<Integer, TraceElement> nextCalls) {
-      return Pair.create(Collections.emptyMap(), Collections.emptyMap());
+    public Result resolve(@NotNull TraceInfo info) {
+      final Map<Integer, TraceElement> orderBefore = info.getValuesOrderBefore();
+      final Map<Integer, TraceElement> orderAfter = info.getValuesOrderAfter();
+
+      return Result.of(toEmptyMap(orderBefore), toEmptyMap(orderAfter));
+    }
+
+    @NotNull
+    private static Map<TraceElement, List<TraceElement>> toEmptyMap(@NotNull Map<Integer, TraceElement> order) {
+      return order.keySet().stream().sorted().collect(Collectors.toMap(order::get, x -> Collections.emptyList()));
     }
   }
 
   private static class MyIdentityResolver implements ValuesOrderResolver {
     @NotNull
     @Override
-    public Pair<Map<TraceElement, List<TraceElement>>, Map<TraceElement, List<TraceElement>>> resolve(@NotNull Map<Integer, TraceElement> previousCalls,
-                                                                                                      @NotNull Map<Integer, TraceElement> nextCalls) {
-      assert previousCalls.size() == nextCalls.size();
-      return Pair.create(buildIdentityMapping(previousCalls), buildIdentityMapping(nextCalls));
+    public Result resolve(@NotNull TraceInfo info) {
+      final Map<Integer, TraceElement> before = info.getValuesOrderBefore();
+      final Map<Integer, TraceElement> after = info.getValuesOrderAfter();
+      assert before.size() == after.size();
+      return Result.of(buildIdentityMapping(before), buildIdentityMapping(after));
     }
 
     private static Map<TraceElement, List<TraceElement>> buildIdentityMapping(@NotNull Map<Integer, TraceElement> previousCalls) {

@@ -21,18 +21,21 @@ import java.util.*;
 public class DistinctResolver implements TraceResolver {
   private final TraceResolver myPeekResolver = new SimplePeekResolver();
 
+  private enum Direction {
+    DIRECT, REVERSE
+  }
+
   @NotNull
   @Override
   public TraceInfo resolve(@NotNull StreamCall call, @NotNull Value value) {
     if (value instanceof ArrayReference) {
       final Value peekTrace = ((ArrayReference)value).getValue(0);
-      final Value distinctDirectTrace = ((ArrayReference)value).getValue(1);
-      final Value distinctReverseTrace = ((ArrayReference)value).getValue(2);
+      final Value trace = ((ArrayReference)value).getValue(1);
 
       final TraceInfo order = myPeekResolver.resolve(call, peekTrace);
 
-      final Map<TraceElement, List<TraceElement>> direct = resolveDirect(distinctDirectTrace, order);
-      final Map<TraceElement, List<TraceElement>> reverse = resolveReverse(distinctReverseTrace, order);
+      final Map<TraceElement, List<TraceElement>> direct = resolve(trace, order, Direction.DIRECT);
+      final Map<TraceElement, List<TraceElement>> reverse = resolve(trace, order, Direction.REVERSE);
 
       return new MyDistinctInfo(order, direct, reverse);
     }
@@ -41,14 +44,19 @@ public class DistinctResolver implements TraceResolver {
   }
 
   @NotNull
-  private static Map<TraceElement, List<TraceElement>> resolveDirect(@NotNull Value value,
-                                                                     @NotNull TraceInfo order) {
+  private static Map<TraceElement, List<TraceElement>> resolve(@NotNull Value value,
+                                                               @NotNull TraceInfo order,
+                                                               @NotNull Direction direction) {
     if (value instanceof ArrayReference) {
       final ArrayReference convertedMap = (ArrayReference)value;
       final Value keys = convertedMap.getValue(0);
       final Value values = convertedMap.getValue(1);
       if (keys instanceof ArrayReference && values instanceof ArrayReference) {
-        return resolveDirectTrace((ArrayReference)keys, (ArrayReference)values, order);
+        final ArrayReference keysArray = (ArrayReference)keys;
+        final ArrayReference valuesArray = (ArrayReference)values;
+        return Direction.DIRECT.equals(direction)
+               ? resolveDirectTrace(keysArray, valuesArray, order)
+               : resolveReverseTrace(keysArray, valuesArray, order);
       }
 
       throw new UnexpectedValueException("keys and values arrays must be arrays");
@@ -80,22 +88,6 @@ public class DistinctResolver implements TraceResolver {
   }
 
   @NotNull
-  private static Map<TraceElement, List<TraceElement>> resolveReverse(@NotNull Value value,
-                                                                      @NotNull TraceInfo order) {
-    if (value instanceof ArrayReference) {
-      final Value keys = ((ArrayReference)value).getValue(0);
-      final Value values = ((ArrayReference)value).getValue(1);
-      if (keys instanceof ArrayReference && values instanceof ArrayReference) {
-        return resolveReverseTrace((ArrayReference)keys, (ArrayReference)values, order);
-      }
-
-      throw new UnexpectedValueException("keys and values arrays must be arrays");
-    }
-
-    throw new UnexpectedValueException("value must be an array reference");
-  }
-
-  @NotNull
   private static Map<TraceElement, List<TraceElement>> resolveReverseTrace(@NotNull ArrayReference keys,
                                                                            @NotNull ArrayReference values,
                                                                            @NotNull TraceInfo order) {
@@ -109,8 +101,8 @@ public class DistinctResolver implements TraceResolver {
     final Map<Integer, TraceElement> before = order.getValuesOrderBefore();
     final Map<Integer, TraceElement> after = order.getValuesOrderAfter();
     for (int i = 0; i < size; i++) {
-      final int afterTime = extractIntValue(keys.getValue(i));
-      final int fromTime = extractIntValue(values.getValue(i));
+      final int fromTime = extractIntValue(keys.getValue(i));
+      final int afterTime = extractIntValue(values.getValue(i));
       final TraceElement beforeElement = before.get(fromTime);
       final TraceElement afterElement = after.get(afterTime);
       result.computeIfAbsent(afterElement, x -> new ArrayList<>()).add(beforeElement);
