@@ -31,11 +31,11 @@ import java.util.List;
  * @author Vitaliy.Bibaev
  */
 public class CollectionView extends JPanel implements Disposable, TraceContainer {
-  private CollectionTree myInstancesTree;
+  private final CollectionTree myInstancesTree;
 
-  CollectionView(@NotNull EvaluationContextImpl evaluationContext, @NotNull List<TraceElement> values) {
+  CollectionView(@NotNull String header, @NotNull EvaluationContextImpl evaluationContext, @NotNull List<TraceElement> values) {
     super(new BorderLayout());
-    add(new JBLabel("stub"), BorderLayout.NORTH);
+    add(new JBLabel(header), BorderLayout.NORTH);
 
     myInstancesTree = new CollectionTree(values, evaluationContext);
 

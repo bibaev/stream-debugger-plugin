@@ -7,9 +7,19 @@ import com.intellij.openapi.project.Project;
 /**
  * @author Vitaliy.Bibaev
  */
-public class AdvancedStreamTracerAction extends AnAction {
+public class TraceStreamAction extends AnAction {
   private static class Holder {
-    private static final AdvancedStreamDebuggerHandler HANDLER = new AdvancedStreamDebuggerHandler();
+    private static final JvmStreamDebuggerActionHandler HANDLER = new JvmStreamDebuggerActionHandler();
+  }
+
+  @Override
+  public void update(AnActionEvent e) {
+    final Project project = e.getProject();
+    if (project != null) {
+      e.getPresentation().setEnabled(Holder.HANDLER.isEnabled(project));
+      return;
+    }
+    e.getPresentation().setEnabled(false);
   }
 
   @Override

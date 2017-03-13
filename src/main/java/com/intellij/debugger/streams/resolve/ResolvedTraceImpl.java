@@ -16,11 +16,14 @@
 package com.intellij.debugger.streams.resolve;
 
 import com.intellij.debugger.streams.trace.smart.TraceElement;
+import com.intellij.debugger.streams.wrapper.StreamCall;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Vitaliy.Bibaev
@@ -29,13 +32,22 @@ public class ResolvedTraceImpl implements ResolvedTrace {
   private final List<TraceElement> myValues;
   private final Map<TraceElement, List<TraceElement>> myPrevious;
   private final Map<TraceElement, List<TraceElement>> myNext;
+  private final StreamCall myCall;
 
-  public ResolvedTraceImpl(@NotNull List<TraceElement> values,
+  public ResolvedTraceImpl(@NotNull StreamCall call,
+                           @NotNull Collection<TraceElement> values,
                            @NotNull Map<TraceElement, List<TraceElement>> toPrev,
                            @NotNull Map<TraceElement, List<TraceElement>> toNext) {
-    myValues = values;
+    myCall = call;
+    myValues = values.stream().sorted().collect(Collectors.toList());
     myPrevious = toPrev;
     myNext = toNext;
+  }
+
+  @NotNull
+  @Override
+  public StreamCall getCall() {
+    return myCall;
   }
 
   @NotNull

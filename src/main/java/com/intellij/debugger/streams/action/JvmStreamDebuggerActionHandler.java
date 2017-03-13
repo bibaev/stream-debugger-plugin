@@ -24,11 +24,12 @@ import com.intellij.debugger.streams.resolve.ResolvedTrace;
 import com.intellij.debugger.streams.resolve.ResolvedTraceImpl;
 import com.intellij.debugger.streams.resolve.ResolverFactoryImpl;
 import com.intellij.debugger.streams.resolve.ValuesOrderResolver;
-import com.intellij.debugger.streams.trace.MapStreamTracerImpl;
 import com.intellij.debugger.streams.trace.TracingCallback;
 import com.intellij.debugger.streams.trace.TracingResult;
+import com.intellij.debugger.streams.trace.smart.MapToArrayTracerImpl;
+import com.intellij.debugger.streams.trace.smart.TraceElement;
 import com.intellij.debugger.streams.trace.smart.resolve.TraceInfo;
-import com.intellij.debugger.streams.ui.TraceWindow;
+import com.intellij.debugger.streams.ui.EvaluationAwareTraceWindow;
 import com.intellij.debugger.streams.wrapper.StreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
@@ -47,6 +48,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,18 +73,21 @@ public class JvmStreamDebuggerActionHandler {
     }
   }
 
-  public void handle(@NotNull XDebugSession session, @NotNull StreamChain chain) {
-    new MapStreamTracerImpl(session).trace(chain, new TracingCallback() {
+  private void handle(@NotNull XDebugSession session, @NotNull StreamChain chain) {
+    final EvaluationAwareTraceWindow window = new EvaluationAwareTraceWindow(session.getProject(), chain);
+    ApplicationManager.getApplication().invokeLater(window::show);
+    new MapToArrayTracerImpl(session).trace(chain, new TracingCallback() {
       @Override
       public void evaluated(@NotNull TracingResult result, @NotNull EvaluationContextImpl context) {
         final List<ResolvedTrace> calls = resolve(result.getTrace());
         ApplicationManager.getApplication()
-          .invokeLater(() -> new TraceWindow(context, session.getProject(), calls).show());
+          .invokeLater(() -> window.setTrace(calls, result.getResult(), context));
       }
 
       @Override
       public void failed(@NotNull String traceExpression, @NotNull String reason) {
         LOG.warn(reason + System.lineSeparator() + "expression:" + System.lineSeparator() + traceExpression);
+        ApplicationManager.getApplication().invokeLater(window::setFailMessage);
       }
     });
   }
@@ -93,7 +98,7 @@ public class JvmStreamDebuggerActionHandler {
     return elementAtCursor != null && StreamChainBuilder.checkStreamExists(elementAtCursor);
   }
 
-  protected static List<ResolvedTrace> resolve(@NotNull List<TraceInfo> trace) {
+  private static List<ResolvedTrace> resolve(@NotNull List<TraceInfo> trace) {
     if (trace.size() == 0) {
       return Collections.emptyList();
     }
@@ -107,12 +112,13 @@ public class JvmStreamDebuggerActionHandler {
       final TraceInfo traceInfo = trace.get(i);
       final StreamCall currentCall = traceInfo.getCall();
 
-      final ValuesOrderResolver.Result currentResolve =
-        ResolverFactoryImpl.getInstance().getResolver(currentCall.getName()).resolve(traceInfo);
+      final ValuesOrderResolver resolver = ResolverFactoryImpl.getInstance().getResolver(currentCall.getName());
+      final ValuesOrderResolver.Result currentResolve = resolver.resolve(traceInfo);
 
-      result.add(
-        new ResolvedTraceImpl(new ArrayList<>(currentResolve.getDirectOrder().keySet()), prevResolved.getReverseOrder(),
-                              currentResolve.getDirectOrder()));
+      final Collection<TraceElement> values = traceInfo.getValuesOrderBefore().values();
+      final ResolvedTrace resolvedTrace =
+        new ResolvedTraceImpl(currentCall, values, prevResolved.getReverseOrder(), currentResolve.getDirectOrder());
+      result.add(resolvedTrace);
 
       prevResolved = currentResolve;
     }
