@@ -5,7 +5,7 @@ buildscript {
 }
 
 plugins {
-    id "org.jetbrains.intellij" version "0.1.10"
+    id "org.jetbrains.intellij" version "0.2.5"
 }
 
 repositories {
@@ -17,7 +17,7 @@ apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'java'
 
 group 'com.intellij.debugger.stream'
-version '0.0.1'
+version '0.0.2'
 
 intellij {
     type = 'IC'

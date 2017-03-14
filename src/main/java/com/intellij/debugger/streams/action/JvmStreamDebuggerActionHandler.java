@@ -87,7 +87,7 @@ public class JvmStreamDebuggerActionHandler {
       @Override
       public void failed(@NotNull String traceExpression, @NotNull String reason) {
         LOG.warn(reason + System.lineSeparator() + "expression:" + System.lineSeparator() + traceExpression);
-        ApplicationManager.getApplication().invokeLater(window::setFailMessage);
+        ApplicationManager.getApplication().invokeLater(() -> window.setFailMessage(reason));
       }
     });
   }
@@ -140,7 +140,7 @@ public class JvmStreamDebuggerActionHandler {
     final PsiFile psiFile = position.getFile();
     final VirtualFile file = psiFile.getVirtualFile();
 
-    if (file != null) {
+    if (line >= 0 && file != null) {
       final Document document = FileDocumentManager.getInstance().getDocument(file);
       if (document != null) {
         final int offset = document.getLineStartOffset(line);
