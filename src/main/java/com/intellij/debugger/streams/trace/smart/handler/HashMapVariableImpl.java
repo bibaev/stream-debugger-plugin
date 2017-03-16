@@ -13,16 +13,16 @@ class HashMapVariableImpl extends VariableImpl {
 
   HashMapVariableImpl(@NotNull String name, @NotNull GenericType from, @NotNull GenericType to, boolean isLinked) {
     super(String.format("java.util.Map<%s, %s>", from.getGenericTypeName(), to.getGenericTypeName()), name,
-          isLinked ? "new java.util.LinkedHashMap<>()" : "java.util.new HashMap<>()");
+          isLinked ? "new java.util.LinkedHashMap<>()" : "new java.util.HashMap<>()");
     myKeyType = from;
     myValueType = to;
   }
 
-  String convertToArray(@NotNull String arrayName, boolean usePrimitiveKeys, boolean usePrimitiveValues) {
+  String convertToArray(@NotNull String arrayName) {
     final String newLine = EvaluateExpressionTracerBase.LINE_SEPARATOR;
 
-    final String keysType = usePrimitiveKeys ? myKeyType.getVariableName() : myKeyType.getGenericTypeName();
-    final String valuesType = usePrimitiveValues ? myValueType.getVariableName() : myValueType.getGenericTypeName();
+    final String keysType = myKeyType.getVariableTypeName();
+    final String valuesType = myValueType.getVariableTypeName();
 
     return "final java.lang.Object[] " + arrayName + ";" + newLine +
            "{" + newLine +
