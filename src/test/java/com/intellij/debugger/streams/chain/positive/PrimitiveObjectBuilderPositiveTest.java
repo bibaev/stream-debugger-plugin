@@ -1,15 +1,14 @@
 package com.intellij.debugger.streams.chain.positive;
 
-import com.intellij.debugger.streams.trace.smart.handler.type.GenericType;
+import com.intellij.debugger.streams.trace.impl.handler.type.GenericType;
 import com.intellij.debugger.streams.wrapper.IntermediateStreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
-import com.intellij.debugger.streams.wrapper.impl.StreamChainBuilder;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static com.intellij.debugger.streams.trace.smart.handler.type.GenericType.*;
+import static com.intellij.debugger.streams.trace.impl.handler.type.GenericType.*;
 
 /**
  * @author Vitaliy.Bibaev
@@ -59,7 +58,7 @@ public class PrimitiveObjectBuilderPositiveTest extends StreamChainBuilderPositi
                       @NotNull GenericType... intermediateAfterTypes) {
     final PsiElement elementAtCaret = configureAndGetElementAtCaret();
     assertNotNull(elementAtCaret);
-    final StreamChain chain = StreamChainBuilder.tryBuildChain(elementAtCaret);
+    final StreamChain chain = getChainBuilder().build(elementAtCaret);
     assertNotNull(chain);
     final List<IntermediateStreamCall> intermediateCalls = chain.getIntermediateCalls();
     assertEquals(intermediateAfterTypes.length, intermediateCalls.size());

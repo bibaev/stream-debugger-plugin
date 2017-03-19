@@ -15,7 +15,6 @@
  */
 package com.intellij.debugger.streams.trace;
 
-import com.intellij.debugger.streams.trace.smart.resolve.TraceInfo;
 import com.sun.jdi.Value;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,4 +33,7 @@ public interface TracingResult {
 
   @NotNull
   List<TraceInfo> getTrace();
+
+  @NotNull
+  ResolvedTracingResult resolve();
 }
