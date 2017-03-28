@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.ui;
+package com.intellij.debugger.streams.ui.impl;
 
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
 import com.intellij.debugger.streams.trace.TraceElement;
+import com.intellij.debugger.streams.ui.TraceContainer;
+import com.intellij.debugger.streams.ui.ValuesSelectionListener;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBLabel;
@@ -39,13 +41,14 @@ public class CollectionView extends JPanel implements Disposable, TraceContainer
 
     myInstancesTree = new CollectionTree(values, evaluationContext);
 
-    add(new JBScrollPane(myInstancesTree), BorderLayout.CENTER);
+    final JBScrollPane scroll = new JBScrollPane(myInstancesTree);
+
+    add(scroll, BorderLayout.CENTER);
     Disposer.register(this, myInstancesTree);
   }
 
   @Override
   public void dispose() {
-
   }
 
   @Override
@@ -61,5 +64,10 @@ public class CollectionView extends JPanel implements Disposable, TraceContainer
   @Override
   public void addSelectionListener(@NotNull ValuesSelectionListener listener) {
     myInstancesTree.addSelectionListener(listener);
+  }
+
+  @NotNull
+  protected CollectionTree getInstancesTree() {
+    return myInstancesTree;
   }
 }

@@ -1,8 +1,9 @@
-package com.intellij.debugger.streams.ui;
+package com.intellij.debugger.streams.ui.impl;
 
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
 import com.intellij.debugger.streams.resolve.ResolvedTrace;
 import com.intellij.debugger.streams.trace.impl.TraceElementImpl;
+import com.intellij.debugger.streams.ui.TraceController;
 import com.intellij.debugger.streams.wrapper.StreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.icons.AllIcons;
@@ -89,15 +90,8 @@ public class EvaluationAwareTraceWindow extends DialogWrapper {
       final TraceController previous = controllers.get(i - 1);
       final TraceController current = controllers.get(i);
 
-      final CollectionView before = new CollectionView("Before", context, previous.getValues());
-      final CollectionView after = new CollectionView("After", context, current.getValues());
-      previous.register(before);
-      current.register(after);
-
-      final JPanel panel = new JPanel(new GridLayout(1, 2));
-      panel.add(before);
-      panel.add(after);
-      tab.setContent(panel, BorderLayout.CENTER);
+      final StreamTracesMappingView view = new StreamTracesMappingView(context, previous, current);
+      tab.setContent(view, BorderLayout.CENTER);
     }
 
     final MyPlaceholder resultTab = myTabContents.get(myTabContents.size() - 1);
@@ -110,7 +104,7 @@ public class EvaluationAwareTraceWindow extends DialogWrapper {
       resultTab.setContent(new JBLabel("There is no result of such stream chain", SwingConstants.CENTER), BorderLayout.CENTER);
     }
 
-    final FlatTraceView flatView = new FlatTraceView(controllers, context);
+    final FlatView flatView = new FlatView(controllers, context);
     myFlatContent.setContent(flatView, BorderLayout.CENTER);
   }
 

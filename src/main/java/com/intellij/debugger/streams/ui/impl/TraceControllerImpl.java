@@ -1,11 +1,15 @@
-package com.intellij.debugger.streams.ui;
+package com.intellij.debugger.streams.ui.impl;
 
 import com.intellij.debugger.streams.resolve.ResolvedTrace;
 import com.intellij.debugger.streams.trace.TraceElement;
+import com.intellij.debugger.streams.ui.*;
 import com.intellij.debugger.streams.wrapper.StreamCall;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -50,6 +54,12 @@ public class TraceControllerImpl implements TraceController, ValuesHighlightingL
   @Override
   public StreamCall getCall() {
     return myResolvedTrace.getCall();
+  }
+
+  @NotNull
+  @Override
+  public ResolvedTrace getResolvedTrace() {
+    return myResolvedTrace;
   }
 
   @Override
