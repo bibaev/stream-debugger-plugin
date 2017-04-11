@@ -1,5 +1,8 @@
 package com.intellij.debugger.streams.trace.impl;
 
+import com.intellij.debugger.streams.psi.impl.LambdaToAnonymousTransformer;
+import com.intellij.debugger.streams.psi.impl.MethodReferenceToLambdaTransformer;
+import com.intellij.debugger.streams.psi.impl.ToObjectInheritorTransformer;
 import com.intellij.debugger.streams.trace.TraceExpressionBuilder;
 import com.intellij.debugger.streams.trace.impl.handler.HandlerFactory;
 import com.intellij.debugger.streams.trace.impl.handler.PeekCall;
@@ -8,7 +11,13 @@ import com.intellij.debugger.streams.wrapper.IntermediateStreamCall;
 import com.intellij.debugger.streams.wrapper.ProducerStreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.debugger.streams.wrapper.impl.StreamChainImpl;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiCodeBlock;
+import com.intellij.psi.PsiElementFactory;
 import one.util.streamex.StreamEx;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,6 +38,12 @@ public class TraceExpressionBuilderImpl implements TraceExpressionBuilder {
   private static final String RESULT_EXPRESSION =
     RESULT_VARIABLE_NAME + " = new java.lang.Object[]{ info, streamResult, elapsedTime };" + LINE_SEPARATOR;
 
+  private final Project myProject;
+
+  public TraceExpressionBuilderImpl(@NotNull Project project) {
+    myProject = project;
+  }
+
   @NotNull
   @Override
   public String createTraceExpression(@NotNull StreamChain chain) {
@@ -44,9 +59,23 @@ public class TraceExpressionBuilderImpl implements TraceExpressionBuilder {
 
     final String tracingCall = buildStreamExpression(traceChain);
 
-    final String result = RESULT_VARIABLE_DECLARATION +
-                          String.format("{" + LINE_SEPARATOR + "%s" + LINE_SEPARATOR + " }" + LINE_SEPARATOR + RESULT_VARIABLE_NAME,
-                                        declarations + tracingCall + fillingInfoArray);
+    final String evaluationCodeBlock = String.format("{" + LINE_SEPARATOR + "%s" + LINE_SEPARATOR + " }",
+                                                     declarations + tracingCall + fillingInfoArray);
+    final PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(myProject);
+    final String expression = ApplicationManager.getApplication().runReadAction((Computable<String>)() -> {
+      final PsiCodeBlock block = elementFactory.createCodeBlockFromText(evaluationCodeBlock, chain.getContext());
+
+      LOG.info("before transformation: " + LINE_SEPARATOR + block.getText());
+
+      MethodReferenceToLambdaTransformer.INSTANCE.transform(block);
+      LambdaToAnonymousTransformer.INSTANCE.transform(block);
+      ToObjectInheritorTransformer.INSTANCE.transform(block);
+      return block.getText();
+    });
+
+    final String result = RESULT_VARIABLE_DECLARATION + LINE_SEPARATOR +
+                          expression + LINE_SEPARATOR +
+                          RESULT_VARIABLE_NAME + ";";
     LOG.info("stream expression to trace:" + LINE_SEPARATOR + result);
     return result;
   }
@@ -79,7 +108,7 @@ public class TraceExpressionBuilderImpl implements TraceExpressionBuilder {
 
     newIntermediateCalls.addAll(terminatorHandler.additionalCallsBefore());
 
-    return new StreamChainImpl(producerCall, newIntermediateCalls, chain.getTerminationCall());
+    return new StreamChainImpl(producerCall, newIntermediateCalls, chain.getTerminationCall(), chain.getContext());
   }
 
   @NotNull
