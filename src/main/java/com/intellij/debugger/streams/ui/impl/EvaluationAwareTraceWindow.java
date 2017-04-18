@@ -17,16 +17,19 @@ package com.intellij.debugger.streams.ui.impl;
 
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
 import com.intellij.debugger.streams.resolve.ResolvedTrace;
+import com.intellij.debugger.streams.resolve.ResolvedTraceImpl;
 import com.intellij.debugger.streams.trace.impl.TraceElementImpl;
 import com.intellij.debugger.streams.ui.TraceController;
 import com.intellij.debugger.streams.wrapper.StreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.ui.JBCardLayout;
 import com.intellij.ui.JBTabsPaneImpl;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.xdebugger.XDebugSession;
+import com.intellij.xdebugger.XDebugSessionListener;
 import com.sun.jdi.Value;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,14 +52,22 @@ public class EvaluationAwareTraceWindow extends DialogWrapper {
   private final JPanel myCenterPane;
   private final List<MyPlaceholder> myTabContents;
   private final MyPlaceholder myFlatContent;
+  private final StreamChain myStreamChain;
 
   private MyMode myMode = MyMode.SPLIT;
 
-  public EvaluationAwareTraceWindow(@Nullable Project project, @NotNull StreamChain chain) {
-    super(project, true);
-    final JBTabsPaneImpl tabs = new JBTabsPaneImpl(project, SwingConstants.TOP, getDisposable());
+  public EvaluationAwareTraceWindow(@NotNull XDebugSession session, @NotNull StreamChain chain) {
+    super(session.getProject(), true);
+    final JBTabsPaneImpl tabs = new JBTabsPaneImpl(session.getProject(), SwingConstants.TOP, getDisposable());
+    session.addSessionListener(new XDebugSessionListener() {
+      @Override
+      public void sessionStopped() {
+        ApplicationManager.getApplication().invokeLater(() -> close(CLOSE_EXIT_CODE));
+      }
+    }, myDisposable);
     setModal(false);
     setTitle("Stream Trace");
+    myStreamChain = chain;
     final JBCardLayout layout = new JBCardLayout();
     myCenterPane = new JPanel(layout);
     myCenterPane.add(tabs.getComponent());
@@ -114,6 +125,11 @@ public class EvaluationAwareTraceWindow extends DialogWrapper {
       final TraceElementImpl resultTraceElement = new TraceElementImpl(Integer.MAX_VALUE, result);
       final CollectionView view = new CollectionView("Result", context, Collections.singletonList(resultTraceElement));
       resultTab.setContent(view, BorderLayout.CENTER);
+      final ResolvedTraceImpl terminationTrace = new ResolvedTraceImpl(myStreamChain.getTerminationCall(),
+                                                                       Collections.singletonList(resultTraceElement),
+                                                                       Collections.emptyMap(),
+                                                                       Collections.emptyMap());
+      controllers.add(new TraceControllerImpl(terminationTrace));
     }
     else {
       resultTab.setContent(new JBLabel("There is no result of such stream chain", SwingConstants.CENTER), BorderLayout.CENTER);
