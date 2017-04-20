@@ -15,33 +15,54 @@
  */
 package com.intellij.debugger.streams.chain.positive;
 
-import com.intellij.debugger.streams.chain.StreamChainBuilderTestCase;
+import com.intellij.debugger.streams.trace.impl.handler.type.GenericType;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-
 /**
  * @author Vitaliy.Bibaev
  */
-public abstract class StreamChainBuilderPositiveTestBase extends StreamChainBuilderTestCase {
+public class TerminationCallTypeTest extends StreamChainBuilderPositiveTestBase {
+  public void testVoidType() throws Exception {
+    doTest(GenericType.VOID);
+  }
+
+  public void testBooleanType() throws Exception {
+    doTest(GenericType.BOOLEAN);
+  }
+
+  public void testIntType() throws Exception {
+    doTest(GenericType.INT);
+  }
+
+  public void testDoubleType() throws Exception {
+    doTest(GenericType.DOUBLE);
+  }
+
+  public void testLongType() throws Exception {
+    doTest(GenericType.LONG);
+  }
+
+  public void testReferenceType() throws Exception {
+    doTest(GenericType.OBJECT);
+  }
 
   @NotNull
   @Override
-  protected String getRelativeTestPath() {
-    return "chain" + File.separator + "positive" + File.separator + getDirectoryName();
+  protected String getDirectoryName() {
+    return "terminationType";
   }
 
-  void doTest() throws Exception {
+  protected void doTest(@NotNull GenericType returnType) throws Exception {
     final PsiElement elementAtCaret = configureAndGetElementAtCaret();
     assertNotNull(elementAtCaret);
     final StreamChain chain = getChainBuilder().build(elementAtCaret);
-    checkResultChain(chain);
+    assertNotNull(chain);
+    assertEquals(returnType, chain.getTerminationCall().getResultType());
   }
 
-  @NotNull
-  protected abstract String getDirectoryName();
-
-  protected abstract void checkResultChain(StreamChain chain);
+  @Override
+  protected void checkResultChain(StreamChain chain) {
+  }
 }

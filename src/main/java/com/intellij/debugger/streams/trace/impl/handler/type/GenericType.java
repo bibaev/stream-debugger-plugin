@@ -27,6 +27,7 @@ public interface GenericType {
   @NotNull
   String getGenericTypeName();
 
+  GenericType BOOLEAN = new GenericTypeImpl("boolean", "java.lang.Boolean");
   GenericType INT = new GenericTypeImpl("int", "java.lang.Integer");
   GenericType DOUBLE = new GenericTypeImpl("double", "java.lang.Double");
   GenericType LONG = new GenericTypeImpl("long", "java.lang.Long");

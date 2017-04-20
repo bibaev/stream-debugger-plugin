@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.wrapper;
+package com.intellij.debugger.streams.exec;
 
-import com.intellij.debugger.streams.trace.impl.handler.type.GenericType;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.execution.ExecutionException;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public interface TerminatorStreamCall extends StreamCall, TypeBeforeAwareCall {
-  @NotNull
-  GenericType getResultType();
+public class SpecialCasesTest extends TraceExecutionTestCase {
+  public void testSortedSignedDoubleZeros() throws InterruptedException, ExecutionException, InvocationTargetException {
+    doTest(false);
+  }
 }
