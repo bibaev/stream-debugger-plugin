@@ -16,10 +16,12 @@
 package com.intellij.debugger.streams.action;
 
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
+import com.intellij.debugger.streams.diagnostic.ex.TraceEvaluationException;
 import com.intellij.debugger.streams.psi.DebuggerPositionResolver;
 import com.intellij.debugger.streams.psi.impl.DebuggerPositionResolverImpl;
 import com.intellij.debugger.streams.resolve.ResolvedTrace;
 import com.intellij.debugger.streams.trace.*;
+import com.intellij.debugger.streams.diagnostic.ex.TraceCompilationException;
 import com.intellij.debugger.streams.trace.impl.TraceExpressionBuilderImpl;
 import com.intellij.debugger.streams.trace.impl.TraceResultInterpreterImpl;
 import com.intellij.debugger.streams.ui.impl.EvaluationAwareTraceWindow;
@@ -77,9 +79,19 @@ public class TraceStreamAction extends AnAction {
         }
 
         @Override
-        public void failed(@NotNull String traceExpression, @NotNull String reason) {
-          LOG.warn(reason + System.lineSeparator() + "expression:" + System.lineSeparator() + traceExpression);
-          ApplicationManager.getApplication().invokeLater(() -> window.setFailMessage(reason));
+        public void evaluationFailed(@NotNull String traceExpression, @NotNull String message) {
+          notifyUI(message);
+          throw new TraceEvaluationException(message, traceExpression);
+        }
+
+        @Override
+        public void compilationFailed(@NotNull String traceExpression, @NotNull String message) {
+          notifyUI(message);
+          throw new TraceCompilationException(message, traceExpression);
+        }
+
+        private void notifyUI(@NotNull String message) {
+          ApplicationManager.getApplication().invokeLater(() -> window.setFailMessage(message));
         }
       });
     }

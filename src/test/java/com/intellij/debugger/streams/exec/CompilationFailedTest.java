@@ -15,6 +15,7 @@
  */
 package com.intellij.debugger.streams.exec;
 
+import com.intellij.debugger.streams.trace.TraceExpressionBuilder;
 import com.intellij.execution.ExecutionException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -22,12 +23,14 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * @author Vitaliy.Bibaev
  */
-public class AccessibilityFailedTest extends FailEvaluationTestCase {
+public class CompilationFailedTest extends FailEvaluationTestCase {
+  public void testCompilationErrorDetected() throws InterruptedException, ExecutionException, InvocationTargetException {
+    doTest(true);
+  }
 
-  /**
-   * Now, evaluation of such test case is not supported. MagicAccessorImpl cannot be parent for a subclass of the class "Super"
-   * */
-  public void testAccessNotObjectSubclass() throws InterruptedException, ExecutionException, InvocationTargetException {
-    doTest(false);
+  @Override
+  protected TraceExpressionBuilder getExpressionBuilder() {
+    final TraceExpressionBuilder builder = super.getExpressionBuilder();
+    return chain -> "float a = 0.;\n" + builder.createTraceExpression(chain);
   }
 }

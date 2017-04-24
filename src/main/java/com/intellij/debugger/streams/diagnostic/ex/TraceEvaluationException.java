@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.trace;
+package com.intellij.debugger.streams.diagnostic.ex;
 
-import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public interface TracingCallback {
-  void evaluated(@NotNull TracingResult result, @NotNull EvaluationContextImpl context);
+public class TraceEvaluationException extends TraceException {
 
-  void evaluationFailed(@NotNull String traceExpression, @NotNull String message);
-
-  void compilationFailed(@NotNull String traceExpression, @NotNull String message);
+  public TraceEvaluationException(@NotNull String message, @NotNull String traceExpression) {
+    super(message, traceExpression);
+  }
 }

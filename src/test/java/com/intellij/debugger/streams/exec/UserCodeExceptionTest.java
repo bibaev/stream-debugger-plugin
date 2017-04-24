@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.trace;
+package com.intellij.debugger.streams.exec;
 
-import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.execution.ExecutionException;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public interface TracingCallback {
-  void evaluated(@NotNull TracingResult result, @NotNull EvaluationContextImpl context);
-
-  void evaluationFailed(@NotNull String traceExpression, @NotNull String message);
-
-  void compilationFailed(@NotNull String traceExpression, @NotNull String message);
+public class UserCodeExceptionTest extends FailEvaluationTestCase {
+  public void testExceptionWhenEvaluating() throws InterruptedException, ExecutionException, InvocationTargetException {
+    doTest(false);
+  }
 }

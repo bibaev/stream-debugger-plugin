@@ -25,9 +25,9 @@ import com.intellij.xdebugger.frame.XStackFrame;
 import com.intellij.xdebugger.frame.XValue;
 import com.intellij.xdebugger.impl.breakpoints.XExpressionImpl;
 import com.intellij.xdebugger.impl.ui.tree.nodes.XEvaluationCallbackBase;
-import com.sun.jdi.ArrayReference;
-import com.sun.jdi.Value;
+import com.sun.jdi.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Vitaliy.Bibaev
@@ -63,16 +63,47 @@ public class EvaluateExpressionTracer implements StreamTracer {
               callback.evaluated(interpretedResult, context);
               return;
             }
+
+            if (reference instanceof ObjectReference) {
+              final ReferenceType type = ((ObjectReference)reference).referenceType();
+              if (type instanceof ClassType) {
+                ClassType classType = (ClassType)type;
+                while (classType != null && !"java.lang.Throwable".equals(classType.name())) {
+                  classType = classType.superclass();
+                }
+
+                if (classType != null) {
+                  final String exceptionMessage = tryExtractExceptionMessage((ObjectReference)reference);
+                  final String description = "Evaluation failed: " + type.name() + " exception thrown";
+                  final String descriptionWithReason = exceptionMessage == null ? description : description + ": " + exceptionMessage;
+                  callback.evaluationFailed(streamTraceExpression, descriptionWithReason);
+                  return;
+                }
+              }
+            }
           }
 
-          callback.failed(streamTraceExpression, "Evaluation result type is unexpected");
+          callback.evaluationFailed(streamTraceExpression, "Evaluation failed: unknown type of result value");
         }
 
         @Override
         public void errorOccurred(@NotNull String errorMessage) {
-          callback.failed(streamTraceExpression, errorMessage);
+          callback.compilationFailed(streamTraceExpression, errorMessage);
         }
       }, stackFrame.getSourcePosition());
     }
+  }
+
+  @Nullable
+  private static String tryExtractExceptionMessage(@NotNull ObjectReference exception) {
+    final ReferenceType type = exception.referenceType();
+    final Field messageField = type.fieldByName("detailMessage");
+    if (messageField == null) return null;
+    final Value message = exception.getValue(messageField);
+    if (message instanceof StringReference) {
+      return ((StringReference)message).value();
+    }
+
+    return null;
   }
 }

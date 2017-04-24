@@ -74,6 +74,11 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
     assertNotNull(session);
 
     final AtomicBoolean completed = new AtomicBoolean(false);
+    final DebuggerPositionResolver positionResolver = getPositionResolver();
+    final StreamChainBuilder chainBuilder = getChainBuilder();
+    final TraceResultInterpreter resultInterpreter = getResultInterpreter();
+    final TraceExpressionBuilder expressionBuilder = getExpressionBuilder();
+
     session.addSessionListener(new XDebugSessionListener() {
       @Override
       public void sessionPaused() {
@@ -84,34 +89,47 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
 
         printContext(getDebugProcess().getDebuggerContext());
         final StreamChain chain = ApplicationManager.getApplication().runReadAction((Computable<StreamChain>)() -> {
-          final PsiElement elementAtBreakpoint = myPositionResolver.getNearestElementToBreakpoint(session);
-          return elementAtBreakpoint == null ? null : myChainBuilder.build(elementAtBreakpoint);
+          final PsiElement elementAtBreakpoint = positionResolver.getNearestElementToBreakpoint(session);
+          return elementAtBreakpoint == null ? null : chainBuilder.build(elementAtBreakpoint);
         });
 
         if (chain == null) {
-          complete(null, null, null);
+          complete(null, null, null, FailureReason.CHAIN_CONTRUCTION);
           return;
         }
 
-        final TraceExpressionBuilderImpl expressionBuilder = new TraceExpressionBuilderImpl(getProject());
-        new EvaluateExpressionTracer(session, expressionBuilder, myResultInterpreter).trace(chain, new TracingCallback() {
+        new EvaluateExpressionTracer(session, expressionBuilder, resultInterpreter).trace(chain, new TracingCallback() {
           @Override
           public void evaluated(@NotNull TracingResult result, @NotNull EvaluationContextImpl context) {
-            complete(chain, result, null);
+            complete(chain, result, null, null);
           }
 
           @Override
-          public void failed(@NotNull String traceExpression, @NotNull String reason) {
-            complete(chain, null, reason);
+          public void evaluationFailed(@NotNull String traceExpression, @NotNull String message) {
+            complete(chain, null, message, FailureReason.EVALUATION);
+          }
+
+          @Override
+          public void compilationFailed(@NotNull String traceExpression, @NotNull String message) {
+            complete(chain, null, message, FailureReason.COMPILATION);
           }
         });
       }
 
       private void complete(@Nullable StreamChain chain,
                             @Nullable TracingResult result,
-                            @Nullable String evaluationError) {
+                            @Nullable String error,
+                            @Nullable FailureReason errorReason) {
         try {
-          handleResults(chain, result, evaluationError, isResultNull);
+          if (error != null) {
+            assertNotNull(errorReason);
+            assertNotNull(chain);
+            handleError(chain, error, errorReason);
+          }
+          else {
+            assertNull(errorReason);
+            handleSuccess(chain, result, isResultNull);
+          }
         }
         catch (Throwable t) {
           println("Exception caught: " + t, ProcessOutputTypes.SYSTEM);
@@ -127,12 +145,34 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
     }, getTestRootDisposable());
   }
 
-  protected void handleResults(@Nullable StreamChain chain,
+  @SuppressWarnings("WeakerAccess")
+  protected DebuggerPositionResolver getPositionResolver() {
+    return myPositionResolver;
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  protected TraceResultInterpreter getResultInterpreter() {
+    return myResultInterpreter;
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  protected StreamChainBuilder getChainBuilder() {
+    return myChainBuilder;
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  protected TraceExpressionBuilder getExpressionBuilder() {
+    return new TraceExpressionBuilderImpl(getProject());
+  }
+
+  protected void handleError(@NotNull StreamChain chain, @NotNull String error, @NotNull FailureReason reason) {
+    fail();
+  }
+
+  protected void handleSuccess(@Nullable StreamChain chain,
                                @Nullable TracingResult result,
-                               @Nullable String evaluationError,
                                boolean resultMustBeNull) {
     assertNotNull(chain);
-    assertNull(evaluationError);
     assertNotNull(result);
 
     println(chain.getText(), ProcessOutputTypes.SYSTEM);
@@ -156,6 +196,7 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
     }
   }
 
+  @SuppressWarnings("WeakerAccess")
   protected void handleTrace(@NotNull List<TraceInfo> trace) {
     for (final TraceInfo info : trace) {
       final String name = info.getCall().getName();
@@ -171,6 +212,7 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
     }
   }
 
+  @SuppressWarnings("WeakerAccess")
   protected void handleResolvedTrace(@NotNull ResolvedTracingResult result) {
     final List<ResolvedTrace> traces = result.getResolvedTraces();
 
@@ -228,12 +270,15 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
 
   @NotNull
   private static String valuesOrderToString(@NotNull Map<Integer, TraceElement> values) {
-    final String res = replaceIfEmpty(StreamEx.of(values.keySet()).sorted().joining(","));
-    return res;
+    return replaceIfEmpty(StreamEx.of(values.keySet()).sorted().joining(","));
   }
 
   @NotNull
   private static String replaceIfEmpty(@NotNull String str) {
     return str.isEmpty() ? "nothing" : str;
+  }
+
+  protected enum FailureReason {
+    COMPILATION, EVALUATION, CHAIN_CONTRUCTION
   }
 }
