@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.chain.positive;
+package com.intellij.debugger.streams.chain.ambiguous;
 
 import com.intellij.debugger.streams.chain.StreamChainBuilderTestCase;
 import com.intellij.debugger.streams.wrapper.StreamChain;
@@ -25,21 +25,29 @@ import java.util.List;
 /**
  * @author Vitaliy.Bibaev
  */
-public abstract class StreamChainBuilderPositiveTestBase extends StreamChainBuilderTestCase {
+public abstract class AmbiguousChainTestCase extends StreamChainBuilderTestCase {
+
+  protected void doTest(@NotNull ResultChecker resultChecker) {
+    final List<StreamChain> chains = buildChains();
+    assertNotNull(chains);
+    resultChecker.check(chains);
+  }
 
   @NotNull
   @Override
   protected String getRelativeTestPath() {
-    return "chain" + File.separator + "positive" + File.separator + getDirectoryName();
-  }
-
-  void doTest() throws Exception {
-    checkResultChains(buildChains());
+    return "chain" + File.separator + "ambiguous" + File.separator + getDirectoryName();
   }
 
   @NotNull
   protected abstract String getDirectoryName();
 
-  protected void checkResultChains(@NotNull List<StreamChain> chains) {
+  @FunctionalInterface
+  public interface ResultChecker {
+    void check(@NotNull List<StreamChain> chains);
+
+    static ResultChecker chainsCountChecker(int count) {
+      return chains -> assertEquals(count, chains.size());
+    }
   }
 }

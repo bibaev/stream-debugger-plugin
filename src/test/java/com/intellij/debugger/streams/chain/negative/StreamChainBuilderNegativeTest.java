@@ -17,8 +17,13 @@ package com.intellij.debugger.streams.chain.negative;
 
 import com.intellij.debugger.streams.chain.StreamChainBuilderTestCase;
 import com.intellij.debugger.streams.wrapper.StreamChain;
+import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.psi.PsiElement;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 /**
  * @author Vitaliy.Bibaev
@@ -53,11 +58,44 @@ public class StreamChainBuilderNegativeTest extends StreamChainBuilderTestCase {
     doTest();
   }
 
+  public void testInLambda() {
+    doTest();
+  }
+
+  public void testInLambdaWithBody() {
+    doTest();
+  }
+
+  public void testInAnonymous() {
+    doTest();
+  }
+
+  public void testAfterStatement() {
+    doTest();
+  }
+
+  public void testInPreviousStatement() {
+    doTest();
+  }
+
+  public void testInNextStatement() {
+    doTest();
+  }
+
   private void doTest() {
-    final PsiElement element = configureAndGetElementAtCaret();
-    assertNotNull(element);
-    final StreamChain chain = getChainBuilder().build(element);
-    assertNull(chain);
+    final List<StreamChain> chains = buildChains();
+    assertTrue(chains.isEmpty());
+  }
+
+  @Override
+  protected List<StreamChain> buildChains() {
+    return ApplicationManager.getApplication().runReadAction((Computable<List<StreamChain>>)() -> {
+      final PsiElement elementAtCaret = configureAndGetElementAtCaret();
+      assertNotNull(elementAtCaret);
+      final StreamChainBuilder builder = getChainBuilder();
+      assertFalse(builder.isChainExists(elementAtCaret));
+      return builder.build(elementAtCaret);
+    });
   }
 
   @NotNull

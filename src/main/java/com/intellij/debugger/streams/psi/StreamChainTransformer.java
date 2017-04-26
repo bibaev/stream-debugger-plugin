@@ -13,33 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.chain.positive;
+package com.intellij.debugger.streams.psi;
 
-import com.intellij.debugger.streams.chain.StreamChainBuilderTestCase;
 import com.intellij.debugger.streams.wrapper.StreamChain;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiMethodCallExpression;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.List;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public abstract class StreamChainBuilderPositiveTestBase extends StreamChainBuilderTestCase {
-
+public interface StreamChainTransformer {
   @NotNull
-  @Override
-  protected String getRelativeTestPath() {
-    return "chain" + File.separator + "positive" + File.separator + getDirectoryName();
-  }
-
-  void doTest() throws Exception {
-    checkResultChains(buildChains());
-  }
-
-  @NotNull
-  protected abstract String getDirectoryName();
-
-  protected void checkResultChains(@NotNull List<StreamChain> chains) {
-  }
+  StreamChain transform(@NotNull List<PsiMethodCallExpression> streamExpressions, @NotNull PsiElement context);
 }

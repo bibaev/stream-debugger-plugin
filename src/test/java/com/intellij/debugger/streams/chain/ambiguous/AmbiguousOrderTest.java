@@ -13,33 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.chain.positive;
+package com.intellij.debugger.streams.chain.ambiguous;
 
-import com.intellij.debugger.streams.chain.StreamChainBuilderTestCase;
-import com.intellij.debugger.streams.wrapper.StreamChain;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
-import java.util.List;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public abstract class StreamChainBuilderPositiveTestBase extends StreamChainBuilderTestCase {
+public class AmbiguousOrderTest extends AmbiguousChainTestCase {
+
+  public void testEmpty() {
+
+  }
 
   @NotNull
   @Override
-  protected String getRelativeTestPath() {
-    return "chain" + File.separator + "positive" + File.separator + getDirectoryName();
-  }
-
-  void doTest() throws Exception {
-    checkResultChains(buildChains());
-  }
-
-  @NotNull
-  protected abstract String getDirectoryName();
-
-  protected void checkResultChains(@NotNull List<StreamChain> chains) {
+  protected String getDirectoryName() {
+    return "order";
   }
 }

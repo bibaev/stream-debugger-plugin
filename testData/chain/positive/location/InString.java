@@ -13,20 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.wrapper;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
-import com.intellij.psi.PsiElement;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
-
-/**
- * @author Vitaliy.Bibaev
- */
-public interface StreamChainBuilder {
-  boolean isChainExists(@NotNull PsiElement startElement);
-
-  @NotNull
-  List<StreamChain> build(@NotNull PsiElement startElement);
+public class Bar {
+  public static void main(String[] args) {
+    final long count = Stream.of("abc", "ac<caret>d", "ef").map(String::length).filter(x -> x % 2 == 0).count();
+  }
 }

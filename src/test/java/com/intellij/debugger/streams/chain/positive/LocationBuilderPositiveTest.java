@@ -18,6 +18,8 @@ package com.intellij.debugger.streams.chain.positive;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 /**
  * @author Vitaliy.Bibaev
  */
@@ -58,14 +60,62 @@ public class LocationBuilderPositiveTest extends StreamChainBuilderPositiveTestB
     doTest();
   }
 
-  @Override
-  protected void checkResultChain(StreamChain chain) {
-    assertNotNull(chain);
+  public void testBeforeStatement() throws Exception {
+    doTest();
+  }
+
+  public void testAfterStatement() throws Exception {
+    doTest();
+  }
+
+  public void testBetweenChainCallsBeforeDot() throws Exception {
+    doTest();
+  }
+
+  public void testBetweenChainCallsAfterDot() throws Exception {
+    doTest();
+  }
+
+  public void testInEmptyParameterList() throws Exception {
+    doTest();
+  }
+
+  public void testBetweenParametersBeforeComma() throws Exception {
+    doTest();
+  }
+
+  public void testBetweenParametersAfterComma() throws Exception {
+    doTest();
+  }
+
+  public void testInAnyLambda() throws Exception {
+    doTest();
+  }
+
+  public void testInAnyAnonymous() throws Exception {
+    doTest();
+  }
+
+  public void testInString() throws Exception {
+    doTest();
+  }
+
+  public void testInVariableName() throws Exception {
+    doTest();
+  }
+
+  public void testInMethodReference() throws Exception {
+    doTest();
   }
 
   @NotNull
   @Override
   protected String getDirectoryName() {
     return "location";
+  }
+
+  @Override
+  protected void checkResultChains(@NotNull List<StreamChain> chains) {
+    assertFalse(chains.isEmpty());
   }
 }

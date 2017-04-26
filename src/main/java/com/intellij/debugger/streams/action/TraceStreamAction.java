@@ -16,18 +16,19 @@
 package com.intellij.debugger.streams.action;
 
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
+import com.intellij.debugger.streams.diagnostic.ex.TraceCompilationException;
 import com.intellij.debugger.streams.diagnostic.ex.TraceEvaluationException;
 import com.intellij.debugger.streams.psi.DebuggerPositionResolver;
+import com.intellij.debugger.streams.psi.impl.AdvancedStreamChainBuilder;
 import com.intellij.debugger.streams.psi.impl.DebuggerPositionResolverImpl;
+import com.intellij.debugger.streams.psi.impl.StreamChainTransformerImpl;
 import com.intellij.debugger.streams.resolve.ResolvedTrace;
 import com.intellij.debugger.streams.trace.*;
-import com.intellij.debugger.streams.diagnostic.ex.TraceCompilationException;
 import com.intellij.debugger.streams.trace.impl.TraceExpressionBuilderImpl;
 import com.intellij.debugger.streams.trace.impl.TraceResultInterpreterImpl;
 import com.intellij.debugger.streams.ui.impl.EvaluationAwareTraceWindow;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
-import com.intellij.debugger.streams.wrapper.impl.StreamChainBuilderImpl;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -49,7 +50,7 @@ public class TraceStreamAction extends AnAction {
 
   private final DebuggerPositionResolver myPositionResolver = new DebuggerPositionResolverImpl();
   private final TraceResultInterpreter myResultInterpreter = new TraceResultInterpreterImpl();
-  private final StreamChainBuilder myChainBuilder = new StreamChainBuilderImpl();
+  private final StreamChainBuilder myChainBuilder = new AdvancedStreamChainBuilder(new StreamChainTransformerImpl());
 
   @Override
   public void update(@NotNull AnActionEvent e) {
@@ -62,7 +63,8 @@ public class TraceStreamAction extends AnAction {
   public void actionPerformed(@NotNull AnActionEvent e) {
     final XDebugSession session = getCurrentSession(e);
     final PsiElement element = session == null ? null : myPositionResolver.getNearestElementToBreakpoint(session);
-    final StreamChain chain = element == null ? null : myChainBuilder.build(element);
+    final List<StreamChain> chains = element == null ? null : myChainBuilder.build(element);
+    final StreamChain chain = chains == null || chains.isEmpty() ? null : chains.get(0);
 
     if (chain != null) {
       final EvaluationAwareTraceWindow window = new EvaluationAwareTraceWindow(session, chain);
