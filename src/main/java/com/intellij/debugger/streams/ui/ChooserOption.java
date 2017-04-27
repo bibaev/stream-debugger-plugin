@@ -13,37 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.wrapper;
+package com.intellij.debugger.streams.ui;
 
-import com.intellij.psi.PsiElement;
+import com.intellij.openapi.util.TextRange;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public interface StreamChain {
+public interface ChooserOption {
   @NotNull
-  ProducerStreamCall getProducerCall();
-
-  @NotNull
-  List<IntermediateStreamCall> getIntermediateCalls();
-
-  @NotNull
-  StreamCall getCall(int index);
-
-  @NotNull
-  TerminatorStreamCall getTerminationCall();
+  Stream<TextRange> rangeStream();
 
   @NotNull
   String getText();
-
-  @NotNull
-  String getCompactText();
-
-  int length();
-
-  @NotNull
-  PsiElement getContext();
 }

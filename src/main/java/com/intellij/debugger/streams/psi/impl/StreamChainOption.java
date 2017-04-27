@@ -13,21 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.wrapper;
+package com.intellij.debugger.streams.psi.impl;
 
+import com.intellij.debugger.streams.ui.ChooserOption;
+import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.openapi.util.TextRange;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.stream.Stream;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public interface MethodCall {
-  @NotNull
-  String getName();
+public class StreamChainOption implements ChooserOption {
+  private final StreamChain myChain;
+
+  public StreamChainOption(@NotNull StreamChain chain) {
+    myChain = chain;
+  }
 
   @NotNull
-  String getArguments();
+  @Override
+  public Stream<TextRange> rangeStream() {
+    return Stream.of(
+      new TextRange(myChain.getProducerCall().getTextRange().getStartOffset(), myChain.getTerminationCall().getTextRange().getEndOffset()));
+  }
 
   @NotNull
-  TextRange getTextRange();
+  @Override
+  public String getText() {
+    return myChain.getCompactText();
+  }
+
+  @NotNull
+  public StreamChain getChain() {
+    return myChain;
+  }
 }
