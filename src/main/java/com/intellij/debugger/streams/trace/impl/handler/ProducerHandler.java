@@ -15,6 +15,7 @@
  */
 package com.intellij.debugger.streams.trace.impl.handler;
 
+import com.intellij.debugger.streams.trace.impl.TraceExpressionBuilderImpl;
 import com.intellij.debugger.streams.trace.impl.handler.type.GenericType;
 import com.intellij.debugger.streams.wrapper.IntermediateStreamCall;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,7 @@ import java.util.List;
 /**
  * @author Vitaliy.Bibaev
  */
-public class ProducerHandler extends HandlerBase {
+public class ProducerHandler extends HandlerBase implements TraceExpressionBuilderImpl.StreamCallTraceHandler {
   private final PeekTracerHandler myPeekTracerHandler;
 
   ProducerHandler(@NotNull GenericType afterType) {

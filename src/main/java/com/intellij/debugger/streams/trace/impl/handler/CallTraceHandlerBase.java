@@ -13,24 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.trace;
+package com.intellij.debugger.streams.trace.impl.handler;
 
-import com.intellij.debugger.streams.resolve.ResolvedTrace;
-import com.sun.jdi.Value;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
+import com.intellij.debugger.streams.trace.impl.TraceExpressionBuilderImpl;
+import com.intellij.debugger.streams.trace.impl.handler.HandlerBase;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public interface ResolvedTracingResult {
-  @NotNull
-  List<ResolvedTrace> getResolvedTraces();
-
-  boolean exceptionThrown();
-
-  @Nullable
-  Value getResult();
+public abstract class CallTraceHandlerBase extends HandlerBase implements TraceExpressionBuilderImpl.StreamCallTraceHandler {
 }

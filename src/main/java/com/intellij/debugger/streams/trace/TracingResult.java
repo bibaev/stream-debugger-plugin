@@ -31,6 +31,8 @@ public interface TracingResult {
   @Nullable
   Value getResult();
 
+  boolean exceptionThrown();
+
   @NotNull
   List<TraceInfo> getTrace();
 

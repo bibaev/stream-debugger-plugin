@@ -15,22 +15,18 @@
  */
 package com.intellij.debugger.streams.trace;
 
-import com.intellij.debugger.streams.resolve.ResolvedTrace;
-import com.sun.jdi.Value;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public interface ResolvedTracingResult {
+public interface TraceHandler {
   @NotNull
-  List<ResolvedTrace> getResolvedTraces();
+  String additionalVariablesDeclaration();
 
-  boolean exceptionThrown();
+  @NotNull
+  String prepareResult();
 
-  @Nullable
-  Value getResult();
+  @NotNull
+  String getResultExpression();
 }

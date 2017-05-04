@@ -13,24 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.trace;
+package com.intellij.debugger.streams.trace.impl.handler;
 
-import com.intellij.debugger.streams.resolve.ResolvedTrace;
-import com.sun.jdi.Value;
+import com.intellij.debugger.streams.trace.impl.TraceExpressionBuilderImpl;
+import com.intellij.debugger.streams.wrapper.StreamChain;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
  * @author Vitaliy.Bibaev
  */
-public interface ResolvedTracingResult {
+public class StreamChainTraceHandlerImpl extends HandlerBase implements TraceExpressionBuilderImpl.StreamChainTraceHandler {
   @NotNull
-  List<ResolvedTrace> getResolvedTraces();
+  @Override
+  public String getTraceExpression(@NotNull StreamChain chain) {
+    return "";
+  }
 
-  boolean exceptionThrown();
+  @NotNull
+  @Override
+  public String prepareResult() {
+    return "";
+  }
 
-  @Nullable
-  Value getResult();
+  @NotNull
+  @Override
+  public String getResultExpression() {
+    return "";
+  }
+
+  @NotNull
+  @Override
+  protected List<Variable> getVariables() {
+    return Collections.emptyList();
+  }
 }
