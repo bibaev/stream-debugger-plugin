@@ -19,6 +19,7 @@ import com.intellij.debugger.streams.ui.LinkedValuesMapping
 import com.intellij.debugger.streams.ui.ValueWithPosition
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
+import com.intellij.util.ui.GraphicsUtil
 import com.intellij.util.ui.JBUI
 import java.awt.BasicStroke
 import java.awt.BorderLayout
@@ -26,6 +27,7 @@ import java.awt.Graphics
 import java.awt.Graphics2D
 import javax.swing.JPanel
 import javax.swing.SwingConstants
+
 
 /**
  * @author Vitaliy.Bibaev
@@ -53,17 +55,23 @@ class MappingPane(name: String,
 
       if (g is Graphics2D) {
         g.stroke = STROKE
-      }
 
+        val config = GraphicsUtil.setupAAPainting(g)
+        drawLines(g, REGULAR_LINK_COLOR)
+        drawLines(g, SELECTED_LINK_COLOR)
+        config.restore()
+      }
+    }
+
+    private fun drawLines(g: Graphics2D, color: JBColor) {
       val x1 = x
       val x2 = x + width
+      g.color = color
       for (value in beforeValues) {
-        val position: Int = value.position
         val linkedValues = mapping.getLinkedValues(value) ?: continue
         for (nextValue in linkedValues) {
-          if (needToDraw(value, nextValue)) {
-            g.color = getLineColor(value, nextValue)
-            val y1 = position
+          if (needToDraw(value, nextValue) && getLineColor(value, nextValue) == color) {
+            val y1 = value.position
             val y2 = nextValue.position
 
             g.drawLine(x1, y1, x2, y2)
