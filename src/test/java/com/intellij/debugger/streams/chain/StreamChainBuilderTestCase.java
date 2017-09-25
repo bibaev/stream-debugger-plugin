@@ -17,8 +17,8 @@ package com.intellij.debugger.streams.chain;
 
 import com.intellij.debugger.impl.DebuggerUtilsEx;
 import com.intellij.debugger.streams.JdkManager;
-import com.intellij.debugger.streams.psi.impl.AdvancedStreamChainBuilder;
-import com.intellij.debugger.streams.psi.impl.StreamChainTransformerImpl;
+import com.intellij.debugger.streams.psi.impl.JavaStreamChainBuilder;
+import com.intellij.debugger.streams.psi.impl.JavaChainTransformerImpl;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
 import com.intellij.openapi.application.ApplicationManager;
@@ -38,7 +38,7 @@ import java.util.List;
  * @author Vitaliy.Bibaev
  */
 public abstract class StreamChainBuilderTestCase extends LightCodeInsightTestCase {
-  private final StreamChainBuilder myNewBuilder = new AdvancedStreamChainBuilder(new StreamChainTransformerImpl());
+  private final StreamChainBuilder myBuilder = new JavaStreamChainBuilder(new JavaChainTransformerImpl());
 
   @NotNull
   @Override
@@ -59,7 +59,7 @@ public abstract class StreamChainBuilderTestCase extends LightCodeInsightTestCas
 
   @NotNull
   protected PsiElement configureAndGetElementAtCaret() {
-    final String name = File.separator + getTestName(false) + ".java";
+    final String name = File.separator + getTestName(false) + getFileExtension();
     configureByFile(name);
     final PsiFile file = getFile();
     final int offset = getEditor().getCaretModel().getCurrentCaret().getOffset();
@@ -70,7 +70,7 @@ public abstract class StreamChainBuilderTestCase extends LightCodeInsightTestCas
 
   @NotNull
   protected StreamChainBuilder getChainBuilder() {
-    return myNewBuilder;
+    return myBuilder;
   }
 
   protected List<StreamChain> buildChains() {
@@ -81,6 +81,10 @@ public abstract class StreamChainBuilderTestCase extends LightCodeInsightTestCas
       assertTrue(builder.isChainExists(elementAtCaret));
       return builder.build(elementAtCaret);
     });
+  }
+
+  protected String getFileExtension() {
+    return ".java";
   }
 
   @NotNull

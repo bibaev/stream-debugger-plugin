@@ -48,10 +48,8 @@ open class PositionsAwareCollectionView(header: String,
         value.invalidate(changed)
       }
       else {
-        value.set(changed,
-                  rect.y + rect.height / 2 - visibleRect.y,
-                  visibleRect.intersects(rect),
-                  instancesTree.isHighlighted(value.traceElement))
+        value.set(changed, rect.y + rect.height / 2 - visibleRect.y,
+                  visibleRect.intersects(rect), instancesTree.isHighlighted(value.traceElement))
       }
     }
 

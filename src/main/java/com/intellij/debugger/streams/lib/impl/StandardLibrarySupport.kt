@@ -15,7 +15,8 @@
  */
 package com.intellij.debugger.streams.lib.impl
 
-import com.intellij.debugger.streams.trace.impl.handler.DistinctHandler
+import com.intellij.debugger.streams.trace.dsl.impl.DslImpl
+import com.intellij.debugger.streams.trace.impl.handler.unified.DistinctTraceHandler
 import com.intellij.debugger.streams.trace.impl.interpret.AllMatchTraceInterpreter
 import com.intellij.debugger.streams.trace.impl.interpret.AnyMatchTraceInterpreter
 import com.intellij.debugger.streams.trace.impl.interpret.NoneMatchTraceInterpreter
@@ -26,6 +27,7 @@ import com.intellij.openapi.project.Project
  */
 class StandardLibrarySupport(project: Project)
   : LibrarySupportBase(LibraryImpl("Java 8 Stream API", JavaLanguage(project), "java.util.stream")) {
+
   init {
     addIntermediateOperationsSupport(FilterOperation("filter"),
                                      FilterOperation("limit"),
@@ -42,7 +44,7 @@ class StandardLibrarySupport(project: Project)
                                      FlatMappingOperation("flatMapToInt"),
                                      FlatMappingOperation("flatMapToLong"),
                                      FlatMappingOperation("flatMapToDouble"),
-                                     DistinctOperation("distinct", ::DistinctHandler),
+                                     DistinctOperation("distinct", { num, call, dsl -> DistinctTraceHandler(num, call, dsl) }),
                                      SortedOperation("sorted"),
                                      ParallelOperation("parallel"))
 

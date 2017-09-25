@@ -15,7 +15,7 @@
  */
 package com.intellij.debugger.streams.chain.positive;
 
-import com.intellij.debugger.streams.trace.impl.handler.type.ClassTypeImpl;
+import com.intellij.debugger.streams.trace.dsl.impl.java.JavaTypes;
 import com.intellij.debugger.streams.trace.impl.handler.type.GenericType;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.psi.PsiElement;
@@ -27,28 +27,28 @@ import java.util.List;
  * @author Vitaliy.Bibaev
  */
 public class TerminationCallTypeTest extends StreamChainBuilderPositiveTestBase {
-  public void testVoidType() throws Exception {
-    doTest(GenericType.VOID);
+  public void testVoidType() {
+    doTest(JavaTypes.INSTANCE.getVOID());
   }
 
-  public void testBooleanType() throws Exception {
-    doTest(GenericType.BOOLEAN);
+  public void testBooleanType() {
+    doTest(JavaTypes.INSTANCE.getBOOLEAN());
   }
 
-  public void testIntType() throws Exception {
-    doTest(GenericType.INT);
+  public void testIntType() {
+    doTest(JavaTypes.INSTANCE.getINT());
   }
 
-  public void testDoubleType() throws Exception {
-    doTest(GenericType.DOUBLE);
+  public void testDoubleType() {
+    doTest(JavaTypes.INSTANCE.getDOUBLE());
   }
 
-  public void testLongType() throws Exception {
-    doTest(GenericType.LONG);
+  public void testLongType() {
+    doTest(JavaTypes.INSTANCE.getLONG());
   }
 
-  public void testReferenceType() throws Exception {
-    doTest(new ClassTypeImpl("int[]"));
+  public void testReferenceType() {
+    doTest(JavaTypes.INSTANCE.array(JavaTypes.INSTANCE.getINT()));
   }
 
   @NotNull
@@ -57,7 +57,7 @@ public class TerminationCallTypeTest extends StreamChainBuilderPositiveTestBase 
     return "terminationType";
   }
 
-  protected void doTest(@NotNull GenericType returnType) throws Exception {
+  protected void doTest(@NotNull GenericType returnType) {
     final PsiElement elementAtCaret = configureAndGetElementAtCaret();
     assertNotNull(elementAtCaret);
     final List<StreamChain> chains = getChainBuilder().build(elementAtCaret);

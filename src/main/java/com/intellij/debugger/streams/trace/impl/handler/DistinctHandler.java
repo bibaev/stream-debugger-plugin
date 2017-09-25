@@ -15,6 +15,10 @@
  */
 package com.intellij.debugger.streams.trace.impl.handler;
 
+import com.intellij.debugger.streams.trace.dsl.CodeBlock;
+import com.intellij.debugger.streams.trace.dsl.Expression;
+import com.intellij.debugger.streams.trace.dsl.impl.TextExpression;
+import com.intellij.debugger.streams.trace.dsl.impl.java.JavaTypes;
 import com.intellij.debugger.streams.trace.impl.TraceExpressionBuilderImpl;
 import com.intellij.debugger.streams.trace.impl.handler.type.ClassTypeImpl;
 import com.intellij.debugger.streams.trace.impl.handler.type.GenericType;
@@ -44,9 +48,11 @@ public class DistinctHandler extends HandlerBase.Intermediate {
     final String variablePrefix = "distinct" + callNumber;
     final String storeMapType = String.format("java.util.Map<java.lang.Integer, %s>", myBeforeType.getGenericTypeName());
     myStoreMapVariable =
-      new HashMapVariableImpl(variablePrefix + "Store", GenericType.OBJECT, new ClassTypeImpl(storeMapType), false);
-    myResolveMapVariable = new HashMapVariableImpl(variablePrefix + "Resolve", GenericType.INT, GenericType.INT, false);
-    myReverseUtilMapVariable = new HashMapVariableImpl(variablePrefix + "ReverseUtil", GenericType.INT, GenericType.INT, false);
+      new HashMapVariableImpl(variablePrefix + "Store", JavaTypes.INSTANCE.getANY(), new ClassTypeImpl(storeMapType), false);
+    myResolveMapVariable = new HashMapVariableImpl(variablePrefix + "Resolve", JavaTypes.INSTANCE.getINT(),
+                                                   JavaTypes.INSTANCE.getINT(), false);
+    myReverseUtilMapVariable = new HashMapVariableImpl(variablePrefix + "ReverseUtil", JavaTypes.INSTANCE.getINT(),
+                                                       JavaTypes.INSTANCE.getINT(), false);
   }
 
   @NotNull
@@ -69,9 +75,9 @@ public class DistinctHandler extends HandlerBase.Intermediate {
 
   @NotNull
   @Override
-  public String prepareResult() {
+  public CodeBlock prepareResult() {
     final String newLine = TraceExpressionBuilderImpl.LINE_SEPARATOR;
-    final String peekPrepare = myPeekTracer.prepareResult();
+    final CodeBlock peekPrepare = myPeekTracer.prepareResult();
 
     final String storeMapName = myStoreMapVariable.getName();
     final String afterMapName = myPeekTracer.getAfterMapName();
@@ -90,13 +96,14 @@ public class DistinctHandler extends HandlerBase.Intermediate {
     final String peekResult =
       "final java.lang.Object peekResult = " + myPeekTracer.getResultExpression() + ";" + TraceExpressionBuilderImpl.LINE_SEPARATOR;
     final String resolve2Array = myResolveMapVariable.convertToArray("resolve");
-    return peekPrepare + prepareResolveMap + resolve2Array + peekResult;
+    String res = peekPrepare + prepareResolveMap + resolve2Array + peekResult;
+    return peekPrepare;
   }
 
   @NotNull
   @Override
-  public String getResultExpression() {
-    return "new java.lang.Object[] { peekResult, resolve }";
+  public Expression getResultExpression() {
+    return new TextExpression("new java.lang.Object[] { peekResult, resolve }");
   }
 
   @NotNull

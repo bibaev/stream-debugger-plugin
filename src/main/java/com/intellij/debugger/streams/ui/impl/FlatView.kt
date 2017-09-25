@@ -77,12 +77,12 @@ open class FlatView(controllers: List<TraceController>, evaluationContext: Evalu
 
       val prevCall = lastController.prevCall
       val tree: CollectionTree
-      tree = if (prevCall == null || prevCall !is TerminatorStreamCall) {
-        CollectionTree(lastController.values, it.map { it.traceElement }, evaluationContext)
-      }
-      else {
+      tree = if (prevCall != null && prevCall is TerminatorStreamCall) {
         val values = lastController.values
         SingleElementTree(values.first(), it.map { it.traceElement }, evaluationContext)
+      }
+      else {
+        CollectionTree(lastController.values, it.map { it.traceElement }, evaluationContext)
       }
       val view = PositionsAwareCollectionView(" ", tree, it)
       lastController.register(view)

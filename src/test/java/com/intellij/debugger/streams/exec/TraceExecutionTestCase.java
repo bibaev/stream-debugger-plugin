@@ -20,13 +20,15 @@ import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
 import com.intellij.debugger.impl.OutputChecker;
 import com.intellij.debugger.streams.lib.LibraryManager;
 import com.intellij.debugger.streams.psi.DebuggerPositionResolver;
-import com.intellij.debugger.streams.psi.impl.AdvancedStreamChainBuilder;
 import com.intellij.debugger.streams.psi.impl.DebuggerPositionResolverImpl;
-import com.intellij.debugger.streams.psi.impl.StreamChainTransformerImpl;
+import com.intellij.debugger.streams.psi.impl.JavaChainTransformerImpl;
+import com.intellij.debugger.streams.psi.impl.JavaStreamChainBuilder;
 import com.intellij.debugger.streams.resolve.ResolvedStreamCall;
 import com.intellij.debugger.streams.resolve.ResolvedStreamChain;
 import com.intellij.debugger.streams.trace.*;
-import com.intellij.debugger.streams.trace.impl.TraceExpressionBuilderImpl;
+import com.intellij.debugger.streams.trace.dsl.impl.DslImpl;
+import com.intellij.debugger.streams.trace.dsl.impl.java.JavaStatementFactory;
+import com.intellij.debugger.streams.trace.impl.JavaTraceExpressionBuilder;
 import com.intellij.debugger.streams.trace.impl.TraceResultInterpreterImpl;
 import com.intellij.debugger.streams.wrapper.StreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
@@ -55,7 +57,7 @@ import java.util.function.Function;
 public abstract class TraceExecutionTestCase extends DebuggerTestCase {
   private static final ChainSelector DEFAULT_CHAIN_SELECTOR = ChainSelector.byIndex(0);
   private final DebuggerPositionResolver myPositionResolver = new DebuggerPositionResolverImpl();
-  private final StreamChainBuilder myChainBuilder = new AdvancedStreamChainBuilder(new StreamChainTransformerImpl());
+  private final StreamChainBuilder myChainBuilder = new JavaStreamChainBuilder(new JavaChainTransformerImpl());
 
   @Override
   protected OutputChecker initOutputChecker() {
@@ -187,7 +189,7 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
 
   @SuppressWarnings("WeakerAccess")
   protected TraceExpressionBuilder getExpressionBuilder() {
-    return new TraceExpressionBuilderImpl(getProject());
+    return new JavaTraceExpressionBuilder(getProject(), new DslImpl(new JavaStatementFactory()));
   }
 
   protected void handleError(@NotNull StreamChain chain, @NotNull String error, @NotNull FailureReason reason) {
@@ -244,9 +246,7 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
     checkChain(resolvedChain);
     checkTracesIsCorrectInBothDirections(resolvedChain);
 
-    final ResolvedStreamCall.Producer producer = resolvedChain.getProducer();
     final ResolvedStreamCall.Terminator terminator = resolvedChain.getTerminator();
-    printBeforeAndAfterValues(producer.getStateBefore(), producer.getStateAfter());
     resolvedChain.getIntermediateCalls().forEach(x -> printBeforeAndAfterValues(x.getStateBefore(), x.getStateAfter()));
     printBeforeAndAfterValues(terminator.getStateBefore(), terminator.getStateAfter());
   }
@@ -254,6 +254,7 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
   private void printBeforeAndAfterValues(@Nullable NextAwareState before, @Nullable PrevAwareState after) {
     assertFalse(before == null && after == null);
     final StreamCall call = before == null ? after.getPrevCall() : before.getNextCall();
+    assertNotNull(call);
     println("mappings for " + call.getName(), ProcessOutputTypes.SYSTEM);
     println("  direct:", ProcessOutputTypes.SYSTEM);
     if (before != null) {
@@ -291,17 +292,10 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
   }
 
   private static void checkChain(@NotNull ResolvedStreamChain chain) {
-    final ResolvedStreamCall.Producer producer = chain.getProducer();
-    final NextAwareState before = producer.getStateBefore();
-    if (before != null) {
-      assertEquals(before.getNextCall().getName(), producer.getCall().getName());
-    }
-
-    assertEquals(producer.getCall(), producer.getStateAfter().getPrevCall());
     final List<ResolvedStreamCall.Intermediate> intermediates = chain.getIntermediateCalls();
     final ResolvedStreamCall.Terminator terminator = chain.getTerminator();
     if (intermediates.isEmpty()) {
-      assertEquals(producer.getCall().getName(), terminator.getStateBefore().getPrevCall().getName());
+      assertFalse(terminator.getStateBefore() instanceof PrevAwareState);
     }
 
     checkIntermediates(chain.getIntermediateCalls());
@@ -309,11 +303,16 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
     assertEquals(terminator.getCall().getName(), terminator.getStateBefore().getNextCall().getName());
     final PrevAwareState after = terminator.getStateAfter();
     if (after != null) {
-      assertEquals(terminator.getCall().getName(), after.getPrevCall().getName());
+      final StreamCall terminatorCall = after.getPrevCall();
+      assertNotNull(terminatorCall);
+      assertEquals(terminator.getCall().getName(), terminatorCall.getName());
     }
 
     if (!intermediates.isEmpty()) {
-      assertEquals(terminator.getCall().getName(), intermediates.get(intermediates.size() - 1).getStateAfter().getNextCall().getName());
+      final ResolvedStreamCall.Intermediate lastIntermediate = intermediates.get(intermediates.size() - 1);
+      final PrevAwareState stateAfterIntermediates = lastIntermediate.getStateAfter();
+      assertInstanceOf(stateAfterIntermediates, NextAwareState.class);
+      assertEquals(terminator.getCall().getName(), ((NextAwareState)stateAfterIntermediates).getNextCall().getName());
     }
   }
 
@@ -322,18 +321,14 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
       final ResolvedStreamCall.Intermediate prev = intermediates.get(i);
       final ResolvedStreamCall.Intermediate next = intermediates.get(i + 1);
       assertSame(prev.getStateAfter(), next.getStateBefore());
-      assertEquals(prev.getCall().getName(), prev.getStateAfter().getPrevCall().getName());
+      final StreamCall prevCall = prev.getStateAfter().getPrevCall();
+      assertNotNull(prevCall);
+      assertEquals(prev.getCall().getName(), prevCall.getName());
       assertEquals(next.getCall().getName(), next.getStateBefore().getNextCall().getName());
     }
   }
 
   private static void checkTracesIsCorrectInBothDirections(@NotNull ResolvedStreamChain resolvedChain) {
-    final ResolvedStreamCall.Producer producer = resolvedChain.getProducer();
-    final NextAwareState before = producer.getStateBefore();
-    if (before != null) {
-      checkNeighborTraces(before, producer.getStateAfter());
-    }
-
     for (final ResolvedStreamCall.Intermediate intermediate : resolvedChain.getIntermediateCalls()) {
       checkNeighborTraces(intermediate.getStateBefore(), intermediate.getStateAfter());
     }

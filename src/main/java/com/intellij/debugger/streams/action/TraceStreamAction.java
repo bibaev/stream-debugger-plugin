@@ -20,12 +20,14 @@ import com.intellij.debugger.streams.diagnostic.ex.TraceCompilationException;
 import com.intellij.debugger.streams.diagnostic.ex.TraceEvaluationException;
 import com.intellij.debugger.streams.lib.LibraryManager;
 import com.intellij.debugger.streams.psi.DebuggerPositionResolver;
-import com.intellij.debugger.streams.psi.impl.AdvancedStreamChainBuilder;
 import com.intellij.debugger.streams.psi.impl.DebuggerPositionResolverImpl;
+import com.intellij.debugger.streams.psi.impl.JavaChainTransformerImpl;
+import com.intellij.debugger.streams.psi.impl.JavaStreamChainBuilder;
 import com.intellij.debugger.streams.psi.impl.StreamChainOption;
-import com.intellij.debugger.streams.psi.impl.StreamChainTransformerImpl;
 import com.intellij.debugger.streams.trace.*;
-import com.intellij.debugger.streams.trace.impl.TraceExpressionBuilderImpl;
+import com.intellij.debugger.streams.trace.dsl.impl.DslImpl;
+import com.intellij.debugger.streams.trace.dsl.impl.java.JavaStatementFactory;
+import com.intellij.debugger.streams.trace.impl.JavaTraceExpressionBuilder;
 import com.intellij.debugger.streams.trace.impl.TraceResultInterpreterImpl;
 import com.intellij.debugger.streams.ui.impl.ElementChooserImpl;
 import com.intellij.debugger.streams.ui.impl.EvaluationAwareTraceWindow;
@@ -44,6 +46,7 @@ import com.intellij.xdebugger.XDebuggerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,13 +57,14 @@ public class TraceStreamAction extends AnAction {
   private static final Logger LOG = Logger.getInstance(TraceStreamAction.class);
 
   private final DebuggerPositionResolver myPositionResolver = new DebuggerPositionResolverImpl();
-  private final StreamChainBuilder myChainBuilder = new AdvancedStreamChainBuilder(new StreamChainTransformerImpl());
+  private final List<StreamChainBuilder> myChainBuilders =
+    Collections.singletonList(new JavaStreamChainBuilder(new JavaChainTransformerImpl()));
 
   @Override
   public void update(@NotNull AnActionEvent e) {
     final XDebugSession session = getCurrentSession(e);
     final PsiElement element = session == null ? null : myPositionResolver.getNearestElementToBreakpoint(session);
-    e.getPresentation().setEnabled(element != null && myChainBuilder.isChainExists(element));
+    e.getPresentation().setEnabled(element != null && isChainExists(element));
   }
 
   @Override
@@ -68,7 +72,10 @@ public class TraceStreamAction extends AnAction {
     final XDebugSession session = getCurrentSession(e);
     final PsiElement element = session == null ? null : myPositionResolver.getNearestElementToBreakpoint(session);
     if (element != null) {
-      final List<StreamChain> chains = myChainBuilder.build(element);
+      final List<StreamChain> chains = myChainBuilders.stream()
+        .filter(builder -> builder.isChainExists(element))
+        .flatMap(builder -> builder.build(element).stream())
+        .collect(Collectors.toList());
       if (chains.isEmpty()) {
         LOG.warn("stream chain is not built");
         return;
@@ -92,11 +99,21 @@ public class TraceStreamAction extends AnAction {
     }
   }
 
+  private boolean isChainExists(@NotNull PsiElement element) {
+    for (final StreamChainBuilder b : myChainBuilders) {
+      if (b.isChainExists(element)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   private void runTrace(@NotNull StreamChain chain, @NotNull XDebugSession session) {
     final EvaluationAwareTraceWindow window = new EvaluationAwareTraceWindow(session, chain);
     ApplicationManager.getApplication().invokeLater(window::show);
     final Project project = session.getProject();
-    final TraceExpressionBuilderImpl expressionBuilder = new TraceExpressionBuilderImpl(project);
+    final TraceExpressionBuilder expressionBuilder = new JavaTraceExpressionBuilder(project, new DslImpl(new JavaStatementFactory()));
     final TraceResultInterpreterImpl resultInterpreter = new TraceResultInterpreterImpl(project);
     final StreamTracer tracer = new EvaluateExpressionTracer(session, expressionBuilder, resultInterpreter);
     tracer.trace(chain, new TracingCallback() {

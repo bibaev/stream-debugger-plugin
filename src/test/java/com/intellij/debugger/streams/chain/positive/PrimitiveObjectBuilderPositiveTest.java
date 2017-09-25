@@ -15,6 +15,7 @@
  */
 package com.intellij.debugger.streams.chain.positive;
 
+import com.intellij.debugger.streams.trace.dsl.impl.java.JavaTypes;
 import com.intellij.debugger.streams.trace.impl.handler.type.GenericType;
 import com.intellij.debugger.streams.wrapper.IntermediateStreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
@@ -23,50 +24,50 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static com.intellij.debugger.streams.trace.impl.handler.type.GenericType.*;
-
 /**
  * @author Vitaliy.Bibaev
  */
 public class PrimitiveObjectBuilderPositiveTest extends StreamChainBuilderPositiveTestBase {
   public void testSimpleObject() {
-    doTest(OBJECT);
+    doTest(JavaTypes.INSTANCE.getANY());
   }
 
   public void testSimpleInt() {
-    doTest(INT);
+    doTest(JavaTypes.INSTANCE.getINT());
   }
 
   public void testSimpleDouble() {
-    doTest(DOUBLE);
+    doTest(JavaTypes.INSTANCE.getDOUBLE());
   }
 
   public void testSimpleLong() {
-    doTest(LONG);
+    doTest(JavaTypes.INSTANCE.getLONG());
   }
 
   public void testObj2Int() {
-    doTest(OBJECT, INT);
+    doTest(JavaTypes.INSTANCE.getANY(), JavaTypes.INSTANCE.getINT());
   }
 
   public void testObj2Long() {
-    doTest(OBJECT, LONG);
+    doTest(JavaTypes.INSTANCE.getANY(), JavaTypes.INSTANCE.getLONG());
   }
 
   public void testObj2Double() {
-    doTest(OBJECT, DOUBLE);
+    doTest(JavaTypes.INSTANCE.getANY(), JavaTypes.INSTANCE.getDOUBLE());
   }
 
   public void testPrimitiveIdentity() {
-    doTest(INT, INT);
+    doTest(JavaTypes.INSTANCE.getINT(), JavaTypes.INSTANCE.getINT());
   }
 
   public void testPrimitive2Obj() {
-    doTest(DOUBLE, OBJECT);
+    doTest(JavaTypes.INSTANCE.getDOUBLE(), JavaTypes.INSTANCE.getANY());
   }
 
   public void testFewTransitions() {
-    doTest(OBJECT, INT, INT, OBJECT, DOUBLE, OBJECT, LONG);
+    doTest(JavaTypes.INSTANCE.getANY(), JavaTypes.INSTANCE.getINT(), JavaTypes.INSTANCE.getINT(),
+           JavaTypes.INSTANCE.getANY(), JavaTypes.INSTANCE.getDOUBLE(), JavaTypes.INSTANCE.getANY(),
+           JavaTypes.INSTANCE.getLONG());
   }
 
   private void doTest(@NotNull GenericType producerAfterType,
@@ -78,7 +79,7 @@ public class PrimitiveObjectBuilderPositiveTest extends StreamChainBuilderPositi
     final StreamChain chain = chains.get(0);
     final List<IntermediateStreamCall> intermediateCalls = chain.getIntermediateCalls();
     assertEquals(intermediateAfterTypes.length, intermediateCalls.size());
-    assertEquals(producerAfterType, chain.getProducerCall().getTypeAfter());
+    assertEquals(producerAfterType, chain.getQualifierExpression().getTypeAfter());
 
     if (intermediateAfterTypes.length > 0) {
       assertEquals(producerAfterType, intermediateCalls.get(0).getTypeBefore());
@@ -110,7 +111,7 @@ public class PrimitiveObjectBuilderPositiveTest extends StreamChainBuilderPositi
   }
 
   @Override
-  void doTest() throws Exception {
+  void doTest() {
     throw new AssertionError();
   }
 }

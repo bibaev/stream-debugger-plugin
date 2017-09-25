@@ -19,9 +19,9 @@ import com.intellij.debugger.streams.resolve.AllToResultResolver
 import com.intellij.debugger.streams.resolve.IdentityResolver
 import com.intellij.debugger.streams.resolve.OptionalOrderResolver
 import com.intellij.debugger.streams.trace.CallTraceInterpreter
-import com.intellij.debugger.streams.trace.impl.handler.MatchHandler
-import com.intellij.debugger.streams.trace.impl.handler.OptionalTerminatorHandler
-import com.intellij.debugger.streams.trace.impl.handler.ToCollectionHandler
+import com.intellij.debugger.streams.trace.impl.handler.unified.ToCollectionHandler
+import com.intellij.debugger.streams.trace.impl.handler.unified.MatchHandler
+import com.intellij.debugger.streams.trace.impl.handler.unified.OptionalTerminationHandler
 import com.intellij.debugger.streams.trace.impl.interpret.CollectIdentityTraceInterpreter
 import com.intellij.debugger.streams.trace.impl.interpret.OptionalTraceInterpreter
 
@@ -30,12 +30,12 @@ import com.intellij.debugger.streams.trace.impl.interpret.OptionalTraceInterpret
  */
 
 class MatchingOperation(name: String, interpreter: CallTraceInterpreter)
-  : TerminalOperationBase(name, { call, _ -> MatchHandler(call) }, interpreter, AllToResultResolver())
+  : TerminalOperationBase(name, { call, _, dsl -> MatchHandler(call, dsl) }, interpreter, AllToResultResolver())
 
 class OptionalResultOperation(name: String)
-  : TerminalOperationBase(name, { call, expr -> OptionalTerminatorHandler(call, expr) },
+  : TerminalOperationBase(name, { call, expr, dsl -> OptionalTerminationHandler(call, expr, dsl) },
                           OptionalTraceInterpreter(), OptionalOrderResolver())
 
 class ToCollectionOperation(name: String)
-  : TerminalOperationBase(name, { call, _ -> ToCollectionHandler(call.typeBefore) },
+  : TerminalOperationBase(name, { call, _, dsl -> ToCollectionHandler(call, dsl) },
                           CollectIdentityTraceInterpreter(), IdentityResolver())

@@ -15,11 +15,16 @@
  */
 package com.intellij.debugger.streams.psi;
 
+import com.intellij.debugger.streams.lib.LibraryManager;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
 import com.intellij.psi.util.InheritanceUtil;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.kotlin.js.descriptorUtils.DescriptorUtilsKt;
+import org.jetbrains.kotlin.psi.KtCallExpression;
+import org.jetbrains.kotlin.types.KotlinType;
 
 /**
  * @author Vitaliy.Bibaev
@@ -32,16 +37,56 @@ public class StreamApiUtil {
     return isIntermediateStreamCall(expression) || isProducerStreamCall(expression) || isTerminationStreamCall(expression);
   }
 
-  public static boolean isTerminationStreamCall(@NotNull PsiMethodCallExpression expression) {
-    return checkStreamCall(expression, true, false);
+  public static boolean isStreamCall(@NotNull KtCallExpression expression) {
+    return isIntermediateStreamCall(expression) || isProducerStreamCall(expression) || isTerminationStreamCall(expression);
+  }
+
+  public static boolean isProducerStreamCall(@NotNull KtCallExpression expression) {
+    return checkCallSupported(expression, false, true);
+  }
+
+  private static boolean isIntermediateStreamCall(@NotNull KtCallExpression expression) {
+    return checkCallSupported(expression, true, true);
+  }
+
+  public static boolean isTerminationStreamCall(@NotNull KtCallExpression expression) {
+    return checkCallSupported(expression, true, false);
   }
 
   public static boolean isProducerStreamCall(@NotNull PsiMethodCallExpression expression) {
-    return checkStreamCall(expression, false, true);
+    final PsiMethod method = expression.resolveMethod();
+
+    return (method != null && method.hasModifierProperty(PsiModifier.STATIC)) ||
+           checkStreamCall(expression, false, true);
   }
 
   private static boolean isIntermediateStreamCall(@NotNull PsiMethodCallExpression expression) {
     return checkStreamCall(expression, true, true);
+  }
+
+  public static boolean isTerminationStreamCall(@NotNull PsiMethodCallExpression expression) {
+    return checkStreamCall(expression, true, false);
+  }
+
+  private static boolean checkCallSupported(@NotNull KtCallExpression expression,
+                                            boolean shouldSupportReceiver,
+                                            boolean shouldSupportResult) {
+    final KotlinType receiverType = KotlinPsiUtilKt.receiverType(expression);
+    final KotlinType resultType = KotlinPsiUtilKt.resolveType(expression);
+
+    final LibraryManager manager = LibraryManager.getInstance(expression.getProject());
+    return (receiverType == null || // there is no producer or producer is a static method
+            shouldSupportReceiver == isSupportedType(receiverType, manager)) &&
+           shouldSupportResult == isSupportedType(resultType, manager);
+  }
+
+  private static boolean isSupportedType(@Nullable KotlinType type, @NotNull LibraryManager manager) {
+    if (type == null) {
+      return false;
+    }
+
+    final String typeName = DescriptorUtilsKt.getJetTypeFqName(type, false);
+    return manager.isPackageSupported(StringUtil.getPackageName(typeName));
   }
 
   private static boolean checkStreamCall(@NotNull PsiMethodCallExpression expression,
