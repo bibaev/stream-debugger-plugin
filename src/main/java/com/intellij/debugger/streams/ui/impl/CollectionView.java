@@ -20,7 +20,6 @@ import com.intellij.debugger.streams.ui.TraceContainer;
 import com.intellij.debugger.streams.ui.ValuesSelectionListener;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,10 +33,10 @@ import java.util.List;
 public class CollectionView extends JPanel implements Disposable, TraceContainer {
   private final CollectionTree myInstancesTree;
 
-  CollectionView(@NotNull String header,
+  CollectionView(@NotNull JLabel header,
                  @NotNull CollectionTree collectionTree) {
-    super(new BorderLayout());
-    add(new JBLabel(header), BorderLayout.NORTH);
+    super(new BorderLayout(0, 5));
+    add(header, BorderLayout.NORTH);
 
     myInstancesTree = collectionTree;
 

@@ -35,7 +35,7 @@ class MappingPane(name: String,
                   fullCallExpression: String,
                   private val beforeValues: List<ValueWithPosition>,
                   private val mapping: LinkedValuesMapping,
-                  private val controller: TraceController) : JPanel(BorderLayout()) {
+                  private val controller: TraceController) : JPanel(BorderLayout(0, 5)) {
   private companion object {
     val DARCULA_LINE_COLOR = LineColor(regular = JBColor.GRAY,
                                        selected = JBColor.BLUE,

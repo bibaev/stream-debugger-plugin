@@ -18,15 +18,29 @@ package com.intellij.debugger.streams.ui.impl
 import com.intellij.debugger.streams.ui.PaintingListener
 import com.intellij.debugger.streams.ui.ValuesPositionsListener
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.ui.JBColor
+import com.intellij.ui.components.JBLabel
 import com.intellij.util.EventDispatcher
+import com.intellij.util.FontUtil
+import javax.swing.JLabel
+import javax.swing.SwingConstants
 
 /**
  * @author Vitaliy.Bibaev
  */
-open class PositionsAwareCollectionView(header: String,
-                                        tree: CollectionTree,
+open class PositionsAwareCollectionView(tree: CollectionTree,
                                         private val values: List<ValueWithPositionImpl>)
-  : CollectionView(header, tree) {
+  : CollectionView(createHeader(tree), tree) {
+  private companion object {
+    fun createHeader(tree: CollectionTree): JLabel {
+      val label = JBLabel(tree.itemsCount.toString(), SwingConstants.CENTER)
+      label.foreground = JBColor.GRAY
+      val oldFont = label.font
+      label.font = FontUtil.minusOne(oldFont)
+      return label
+    }
+  }
+
   private val myDispatcher: EventDispatcher<ValuesPositionsListener> = EventDispatcher.create(ValuesPositionsListener::class.java)
 
   init {
@@ -80,4 +94,4 @@ open class PositionsAwareCollectionView(header: String,
 }
 
 class SourceView(tree: CollectionTree)
-  : CollectionView("Source", tree)
+  : CollectionView(JBLabel("Source"), tree)

@@ -65,6 +65,7 @@ public class CollectionTree extends XDebuggerTree implements TraceContainer {
   private final Project myProject;
   private final Map<TraceElement, TreePath> myValue2Path = new HashMap<>();
   private final Map<TreePath, TraceElement> myPath2Value = new HashMap<>();
+  private final int myItemsCount;
   private Set<TreePath> myHighlighted = Collections.emptySet();
   private final EventDispatcher<ValuesSelectionListener> mySelectionDispatcher = EventDispatcher.create(ValuesSelectionListener.class);
   private final EventDispatcher<PaintingListener> myPaintingDispatcher = EventDispatcher.create(PaintingListener.class);
@@ -79,6 +80,7 @@ public class CollectionTree extends XDebuggerTree implements TraceContainer {
 
     myProject = evaluationContext.getProject();
     myNodeManager = new MyNodeManager(myProject);
+    myItemsCount = values.size();
     final XValueNodeImpl root = new XValueNodeImpl(this, null, "root", new MyRootValue(values, evaluationContext));
     setRoot(root, false);
     root.setLeaf(false);
@@ -208,6 +210,10 @@ public class CollectionTree extends XDebuggerTree implements TraceContainer {
   @Override
   public boolean highlightedExists() {
     return !isSelectionEmpty() || !myHighlighted.isEmpty();
+  }
+
+  public int getItemsCount() {
+    return myItemsCount;
   }
 
   public void addPaintingListener(@NotNull PaintingListener listener) {
