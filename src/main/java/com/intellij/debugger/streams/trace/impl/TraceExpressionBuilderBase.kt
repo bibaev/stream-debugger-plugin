@@ -30,7 +30,6 @@ import com.intellij.debugger.streams.wrapper.IntermediateStreamCall
 import com.intellij.debugger.streams.wrapper.StreamChain
 import com.intellij.debugger.streams.wrapper.impl.StreamChainImpl
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.util.collectionUtils.concat
 import java.util.*
 
 /**
@@ -113,9 +112,8 @@ abstract class TraceExpressionBuilderBase(private val myProject: Project, protec
   private fun buildDeclarations(intermediateCallsHandlers: List<IntermediateCallHandler>,
                                 terminatorHandler: TerminatorCallHandler): CodeBlock {
     return dsl.block {
-      intermediateCallsHandlers.flatMap { it.additionalVariablesDeclaration() }
-        .concat(terminatorHandler.additionalVariablesDeclaration())!!
-        .forEach({ declare(it) })
+      intermediateCallsHandlers.flatMap { it.additionalVariablesDeclaration() }.forEach({ declare(it) })
+      terminatorHandler.additionalVariablesDeclaration().forEach({ declare(it) })
     }
   }
 
