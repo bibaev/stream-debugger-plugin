@@ -19,9 +19,9 @@ import com.intellij.debugger.streams.resolve.AllToResultResolver
 import com.intellij.debugger.streams.resolve.IdentityResolver
 import com.intellij.debugger.streams.resolve.OptionalOrderResolver
 import com.intellij.debugger.streams.trace.CallTraceInterpreter
-import com.intellij.debugger.streams.trace.impl.handler.unified.ToCollectionHandler
 import com.intellij.debugger.streams.trace.impl.handler.unified.MatchHandler
 import com.intellij.debugger.streams.trace.impl.handler.unified.OptionalTerminationHandler
+import com.intellij.debugger.streams.trace.impl.handler.unified.ToCollectionHandler
 import com.intellij.debugger.streams.trace.impl.interpret.CollectIdentityTraceInterpreter
 import com.intellij.debugger.streams.trace.impl.interpret.OptionalTraceInterpreter
 

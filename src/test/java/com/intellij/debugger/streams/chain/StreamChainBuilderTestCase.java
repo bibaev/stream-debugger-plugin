@@ -17,8 +17,8 @@ package com.intellij.debugger.streams.chain;
 
 import com.intellij.debugger.impl.DebuggerUtilsEx;
 import com.intellij.debugger.streams.JdkManager;
-import com.intellij.debugger.streams.psi.impl.JavaStreamChainBuilder;
 import com.intellij.debugger.streams.psi.impl.JavaChainTransformerImpl;
+import com.intellij.debugger.streams.psi.impl.JavaStreamChainBuilder;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
 import com.intellij.openapi.application.ApplicationManager;

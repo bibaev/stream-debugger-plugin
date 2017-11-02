@@ -15,7 +15,7 @@
  */
 package com.intellij.debugger.streams.trace.impl.handler.type
 
-import java.util.Objects
+import java.util.*
 
 /**
  * @author Vitaliy.Bibaev

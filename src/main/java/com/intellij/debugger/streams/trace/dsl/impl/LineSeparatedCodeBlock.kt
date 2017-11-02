@@ -15,7 +15,8 @@
  */
 package com.intellij.debugger.streams.trace.dsl.impl
 
-import com.intellij.debugger.streams.trace.dsl.*
+import com.intellij.debugger.streams.trace.dsl.Statement
+import com.intellij.debugger.streams.trace.dsl.StatementFactory
 
 /**
  * TODO: Add ability to add braces at the beginning and at the end
