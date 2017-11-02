@@ -26,6 +26,7 @@ import com.intellij.util.ui.UIUtil
 import java.awt.*
 import javax.swing.JPanel
 import javax.swing.SwingConstants
+import javax.swing.border.EmptyBorder
 
 
 /**
@@ -35,7 +36,7 @@ class MappingPane(name: String,
                   fullCallExpression: String,
                   private val beforeValues: List<ValueWithPosition>,
                   private val mapping: LinkedValuesMapping,
-                  private val controller: TraceController) : JPanel(BorderLayout(0, 5)) {
+                  private val controller: TraceController) : JPanel(BorderLayout()) {
   private companion object {
     val DARCULA_LINE_COLOR = LineColor(regular = JBColor.GRAY,
                                        selected = JBColor.BLUE,
@@ -50,6 +51,7 @@ class MappingPane(name: String,
   init {
     val label = JBLabel(name, SwingConstants.CENTER)
     label.toolTipText = fullCallExpression
+    label.border = EmptyBorder(JBUI.scale(2), 0, JBUI.scale(3), 0)
     add(label, BorderLayout.NORTH)
     add(MyDrawPane(), BorderLayout.CENTER)
   }

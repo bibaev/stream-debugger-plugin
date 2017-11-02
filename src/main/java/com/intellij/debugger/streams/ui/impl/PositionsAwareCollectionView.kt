@@ -21,9 +21,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.EventDispatcher
-import com.intellij.util.FontUtil
+import com.intellij.util.ui.JBUI
 import javax.swing.JLabel
 import javax.swing.SwingConstants
+import javax.swing.border.EmptyBorder
 
 /**
  * @author Vitaliy.Bibaev
@@ -31,15 +32,6 @@ import javax.swing.SwingConstants
 open class PositionsAwareCollectionView(tree: CollectionTree,
                                         private val values: List<ValueWithPositionImpl>)
   : CollectionView(createHeader(tree), tree) {
-  private companion object {
-    fun createHeader(tree: CollectionTree): JLabel {
-      val label = JBLabel(tree.itemsCount.toString(), SwingConstants.CENTER)
-      label.foreground = JBColor.GRAY
-      val oldFont = label.font
-      label.font = FontUtil.minusOne(oldFont)
-      return label
-    }
-  }
 
   private val myDispatcher: EventDispatcher<ValuesPositionsListener> = EventDispatcher.create(ValuesPositionsListener::class.java)
 
@@ -93,5 +85,14 @@ open class PositionsAwareCollectionView(tree: CollectionTree,
   }
 }
 
+private fun createHeader(tree: CollectionTree): JLabel {
+  val label = JBLabel(tree.itemsCount.toString(), SwingConstants.CENTER)
+  label.foreground = JBColor.GRAY
+  val oldFont = label.font
+  label.font = oldFont.deriveFont(oldFont.size - JBUI.scale(1.toFloat()))
+  label.border = EmptyBorder(JBUI.scale(3), 0, JBUI.scale(3), 0)
+  return label
+}
+
 class SourceView(tree: CollectionTree)
-  : CollectionView(JBLabel("Source"), tree)
+  : CollectionView(createHeader(tree), tree)

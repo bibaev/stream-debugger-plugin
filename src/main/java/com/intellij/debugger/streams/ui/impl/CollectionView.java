@@ -35,7 +35,7 @@ public class CollectionView extends JPanel implements Disposable, TraceContainer
 
   CollectionView(@NotNull JLabel header,
                  @NotNull CollectionTree collectionTree) {
-    super(new BorderLayout(0, 5));
+    super(new BorderLayout());
     add(header, BorderLayout.NORTH);
 
     myInstancesTree = collectionTree;
