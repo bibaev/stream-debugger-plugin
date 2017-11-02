@@ -24,6 +24,7 @@ import com.intellij.debugger.streams.ui.TraceContainer;
 import com.intellij.debugger.streams.ui.TraceController;
 import com.intellij.debugger.streams.ui.ValuesSelectionListener;
 import com.intellij.debugger.streams.wrapper.StreamCall;
+import com.intellij.openapi.Disposable;
 import com.sun.jdi.Value;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 /**
  * @author Vitaliy.Bibaev
  */
-public class TraceControllerImpl implements TraceController {
+public class TraceControllerImpl implements TraceController, Disposable {
   private final List<TraceContainer> myTraceContainers = new CopyOnWriteArrayList<>();
   private final ValuesSelectionListener mySelectionListener;
   private final IntermediateState myState;
@@ -57,6 +58,10 @@ public class TraceControllerImpl implements TraceController {
       propagateForward(elements);
       propagateBackward(elements);
     };
+  }
+
+  @Override
+  public void dispose() {
   }
 
   void setPreviousController(@NotNull TraceController listener) {
