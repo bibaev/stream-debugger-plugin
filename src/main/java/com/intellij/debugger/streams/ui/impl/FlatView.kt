@@ -23,7 +23,6 @@ import com.intellij.debugger.streams.ui.ValueWithPosition
 import com.intellij.debugger.streams.ui.ValuesPositionsListener
 import com.intellij.debugger.streams.wrapper.TerminatorStreamCall
 import com.intellij.debugger.streams.wrapper.TraceUtil
-import com.intellij.ui.components.JBLabel
 import java.awt.Component
 import java.awt.GridLayout
 import javax.swing.JPanel
@@ -101,7 +100,9 @@ open class FlatView(controllers: List<TraceController>, evaluationContext: Evalu
     if (controllers.size == 1) {
       val controller = controllers[0]
       val tree = CollectionTree(controller.values, controller.trace, evaluationContext)
-      add(CollectionView(JBLabel(""), tree))
+      val view = CollectionView(tree)
+      add(view)
+      controller.register(view)
     }
   }
 

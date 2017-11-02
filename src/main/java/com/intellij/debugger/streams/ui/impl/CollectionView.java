@@ -20,7 +20,10 @@ import com.intellij.debugger.streams.ui.TraceContainer;
 import com.intellij.debugger.streams.ui.ValuesSelectionListener;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.ui.JBColor;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -44,6 +47,19 @@ public class CollectionView extends JPanel implements Disposable, TraceContainer
 
     add(scroll, BorderLayout.CENTER);
     Disposer.register(this, myInstancesTree);
+  }
+
+  CollectionView(@NotNull CollectionTree tree) {
+    this(createDefaultLabel(tree), tree);
+  }
+
+  private static JLabel createDefaultLabel(@NotNull CollectionTree tree) {
+    final JLabel label = new JBLabel(String.valueOf(tree.getItemsCount()), SwingConstants.CENTER);
+    label.setForeground(JBColor.GRAY);
+    final Font oldFont = label.getFont();
+    label.setFont(oldFont.deriveFont(oldFont.getSize() - JBUI.scale(1.f)));
+    label.setBorder(JBUI.Borders.empty(3, 0));
+    return label;
   }
 
   @Override
