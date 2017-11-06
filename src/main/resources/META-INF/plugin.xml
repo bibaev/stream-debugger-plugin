@@ -54,7 +54,7 @@
   </change-notes>
 
   <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
-  <idea-version since-build="171"/>
+  <idea-version since-build="171" until-build="173.*"/>
 
   <project-components>
     <component>
