@@ -39,7 +39,7 @@ version '0.1.5'
 
 intellij {
   type = 'IC'
-  version = 'LATEST-EAP-SNAPSHOT'
+  version = '2017.2'
 
   pluginName = 'stream-debugger'
   updateSinceUntilBuild = false
