@@ -81,7 +81,8 @@ public class EvaluationAwareTraceWindow extends DialogWrapper {
     myTabContents = new ArrayList<>();
     final QualifierExpression qualifierExpression = chain.getQualifierExpression();
     final MyPlaceholder firstTab = new MyPlaceholder();
-    myTabsPane.insertTab("qualifier", StreamDebuggerIcons.STREAM_CALL_TAB_ICON, firstTab, qualifierExpression.getText(), 0);
+    myTabsPane.insertTab(TraceUtil.formatQualifierExpression(qualifierExpression.getText(), 30),
+                         StreamDebuggerIcons.STREAM_CALL_TAB_ICON, firstTab, qualifierExpression.getText(), 0);
     myTabContents.add(firstTab);
 
     for (int i = 0, chainLength = chain.length(); i < chainLength; i++) {
