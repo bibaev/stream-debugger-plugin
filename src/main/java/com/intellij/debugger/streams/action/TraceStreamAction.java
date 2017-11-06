@@ -33,16 +33,24 @@ import com.intellij.debugger.streams.ui.impl.ElementChooserImpl;
 import com.intellij.debugger.streams.ui.impl.EvaluationAwareTraceWindow;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.projectRoots.JavaSdk;
+import com.intellij.openapi.projectRoots.JavaSdkVersion;
+import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.ui.MessageType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiEditorUtil;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManager;
+import com.intellij.xdebugger.impl.XDebugSessionImpl;
+import com.intellij.xdebugger.impl.XDebuggerManagerImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,6 +79,14 @@ public class TraceStreamAction extends AnAction {
   public void actionPerformed(@NotNull AnActionEvent e) {
     final XDebugSession session = getCurrentSession(e);
     final PsiElement element = session == null ? null : myPositionResolver.getNearestElementToBreakpoint(session);
+
+    if (element != null && isJdkAtLeast9(session.getProject(), element)) {
+      XDebugSessionImpl.NOTIFICATION_GROUP
+        .createNotification("This action does not work with JDK 9 yet", MessageType.WARNING)
+        .notify(session.getProject());
+      return;
+    }
+
     if (element != null) {
       final List<StreamChain> chains = myChainBuilders.stream()
         .filter(builder -> builder.isChainExists(element))
@@ -146,6 +162,18 @@ public class TraceStreamAction extends AnAction {
   private XDebugSession getCurrentSession(@NotNull AnActionEvent e) {
     final Project project = e.getProject();
     return project == null ? null : XDebuggerManager.getInstance(project).getCurrentSession();
+  }
+
+  private static boolean isJdkAtLeast9(@NotNull Project project, @NotNull PsiElement element) {
+    if (element.getLanguage().is(JavaLanguage.INSTANCE)) {
+      final Sdk sdk = ProjectRootManager.getInstance(project).getProjectSdk();
+      if (sdk != null) {
+        final JavaSdkVersion javaVersion = JavaSdk.getInstance().getVersion(sdk);
+        if (javaVersion != null) return javaVersion.isAtLeast(JavaSdkVersion.JDK_1_9);
+      }
+    }
+
+    return false;
   }
 
   private static class MyStreamChainChooser extends ElementChooserImpl<StreamChainOption> {
