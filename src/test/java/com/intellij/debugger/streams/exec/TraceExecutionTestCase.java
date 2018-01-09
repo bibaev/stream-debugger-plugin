@@ -18,17 +18,13 @@ package com.intellij.debugger.streams.exec;
 import com.intellij.debugger.DebuggerTestCase;
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
 import com.intellij.debugger.impl.OutputChecker;
-import com.intellij.debugger.streams.lib.LibraryManager;
+import com.intellij.debugger.streams.lib.LibrarySupportProvider;
+import com.intellij.debugger.streams.lib.impl.StandardLibrarySupportProvider;
 import com.intellij.debugger.streams.psi.DebuggerPositionResolver;
 import com.intellij.debugger.streams.psi.impl.DebuggerPositionResolverImpl;
-import com.intellij.debugger.streams.psi.impl.JavaChainTransformerImpl;
-import com.intellij.debugger.streams.psi.impl.JavaStreamChainBuilder;
 import com.intellij.debugger.streams.resolve.ResolvedStreamCall;
 import com.intellij.debugger.streams.resolve.ResolvedStreamChain;
 import com.intellij.debugger.streams.trace.*;
-import com.intellij.debugger.streams.trace.dsl.impl.DslImpl;
-import com.intellij.debugger.streams.trace.dsl.impl.java.JavaStatementFactory;
-import com.intellij.debugger.streams.trace.impl.JavaTraceExpressionBuilder;
 import com.intellij.debugger.streams.trace.impl.TraceResultInterpreterImpl;
 import com.intellij.debugger.streams.wrapper.StreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
@@ -56,17 +52,34 @@ import java.util.function.Function;
  */
 public abstract class TraceExecutionTestCase extends DebuggerTestCase {
   private static final ChainSelector DEFAULT_CHAIN_SELECTOR = ChainSelector.byIndex(0);
+  private static final LibrarySupportProvider DEFAULT_LIBRARY_SUPPORT_PROVIDER = new StandardLibrarySupportProvider();
   private final DebuggerPositionResolver myPositionResolver = new DebuggerPositionResolverImpl();
-  private final StreamChainBuilder myChainBuilder = new JavaStreamChainBuilder(new JavaChainTransformerImpl());
 
   @Override
   protected OutputChecker initOutputChecker() {
     return new OutputChecker(getTestAppPath(), getAppOutputPath());
   }
 
+  protected LibrarySupportProvider getLibrarySupportProvider() {
+    return DEFAULT_LIBRARY_SUPPORT_PROVIDER;
+  }
+
   @Override
   protected String getTestAppPath() {
     return new File("testData/debug/").getAbsolutePath();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    try {
+      //noinspection SuperTearDownInFinally
+      super.tearDown();
+    }
+    catch (Throwable t) {
+      if (!t.getMessage().startsWith("Thread leaked: Thread[")) {
+        throw t;
+      }
+    }
   }
 
   protected void doTest(boolean isResultNull) {
@@ -136,7 +149,6 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
 
           @Override
           public void compilationFailed(@NotNull String traceExpression, @NotNull String message) {
-            System.out.println(traceExpression);
             complete(chain, null, message, FailureReason.COMPILATION);
           }
         });
@@ -158,7 +170,6 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
           }
         }
         catch (Throwable t) {
-          t.printStackTrace();
           println("Exception caught: " + t + ", " + t.getMessage(), ProcessOutputTypes.SYSTEM);
         }
         finally {
@@ -179,17 +190,17 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
 
   @SuppressWarnings("WeakerAccess")
   protected TraceResultInterpreter getResultInterpreter() {
-    return new TraceResultInterpreterImpl(getProject());
+    return new TraceResultInterpreterImpl(getLibrarySupportProvider().getLibrarySupport().getInterpreterFactory());
   }
 
   @SuppressWarnings("WeakerAccess")
   protected StreamChainBuilder getChainBuilder() {
-    return myChainBuilder;
+    return getLibrarySupportProvider().getChainBuilder();
   }
 
   @SuppressWarnings("WeakerAccess")
   protected TraceExpressionBuilder getExpressionBuilder() {
-    return new JavaTraceExpressionBuilder(getProject(), new DslImpl(new JavaStatementFactory()));
+    return getLibrarySupportProvider().getExpressionBuilder(getProject());
   }
 
   protected void handleError(@NotNull StreamChain chain, @NotNull String error, @NotNull FailureReason reason) {
@@ -210,7 +221,7 @@ public abstract class TraceExecutionTestCase extends DebuggerTestCase {
     final List<TraceInfo> trace = result.getTrace();
     handleTrace(trace);
 
-    final ResolvedTracingResult resolvedTrace = result.resolve(LibraryManager.getInstance(getProject()));
+    final ResolvedTracingResult resolvedTrace = result.resolve(getLibrarySupportProvider().getLibrarySupport().getResolverFactory());
     handleResolvedTrace(resolvedTrace);
   }
 
