@@ -31,6 +31,7 @@ import com.intellij.debugger.ui.impl.watch.ValueDescriptorImpl;
 import com.intellij.debugger.ui.tree.NodeDescriptor;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.GraphicsConfig;
 import com.intellij.ui.JBColor;
 import com.intellij.util.EventDispatcher;
 import com.intellij.util.ui.UIUtil;
@@ -147,6 +148,28 @@ public class CollectionTree extends XDebuggerTree implements TraceContainer {
     this(traceElements.stream().map(TraceElement::getValue).collect(Collectors.toList()), traceElements, evaluationContext);
   }
 
+  /**
+   * A workaround for class cast exception in 2017.1
+   */
+  @Override
+  protected void paintFileColorGutter(Graphics g) {
+    GraphicsConfig config = new GraphicsConfig(g);
+    Rectangle rect = getVisibleRect();
+    int firstVisibleRow = getClosestRowForLocation(rect.x, rect.y);
+    int lastVisibleRow = getClosestRowForLocation(rect.x, rect.y + rect.height);
+
+    for (int row = firstVisibleRow; row <= lastVisibleRow; row++) {
+      TreePath path = getPathForRow(row);
+      Color color = path == null ? null : getFileColorForPath(path);
+      if (color != null) {
+        Rectangle bounds = getRowBounds(row);
+        g.setColor(color);
+        g.fillRect(0, bounds.y, getWidth(), bounds.height);
+      }
+    }
+    config.restore();
+  }
+
   @Override
   public boolean isFileColorsEnabled() {
     return true;
@@ -213,7 +236,7 @@ public class CollectionTree extends XDebuggerTree implements TraceContainer {
     return !isSelectionEmpty() || !myHighlighted.isEmpty();
   }
 
-  public int getItemsCount() {
+  int getItemsCount() {
     return myItemsCount;
   }
 
