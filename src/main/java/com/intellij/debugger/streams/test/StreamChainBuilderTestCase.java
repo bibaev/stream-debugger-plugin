@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2017 JetBrains s.r.o.
+ * Copyright 2000-2018 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.chain;
+package com.intellij.debugger.streams.test;
 
 import com.intellij.debugger.impl.DebuggerUtilsEx;
-import com.intellij.debugger.streams.JdkManager;
 import com.intellij.debugger.streams.psi.impl.JavaChainTransformerImpl;
 import com.intellij.debugger.streams.psi.impl.JavaStreamChainBuilder;
 import com.intellij.debugger.streams.wrapper.StreamChain;
@@ -83,6 +82,7 @@ public abstract class StreamChainBuilderTestCase extends LightCodeInsightTestCas
     });
   }
 
+  @SuppressWarnings("WeakerAccess")
   protected String getFileExtension() {
     return ".java";
   }

@@ -15,7 +15,7 @@
  */
 package com.intellij.debugger.streams.chain.negative;
 
-import com.intellij.debugger.streams.chain.StreamChainBuilderTestCase;
+import com.intellij.debugger.streams.test.StreamChainBuilderTestCase;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
 import com.intellij.openapi.application.ApplicationManager;

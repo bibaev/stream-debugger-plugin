@@ -15,7 +15,7 @@
  */
 package com.intellij.debugger.streams.exec.streamex
 
-import com.intellij.debugger.streams.exec.TraceExecutionTestCase
+import com.intellij.debugger.streams.test.TraceExecutionTestCase
 import com.intellij.debugger.streams.lib.LibrarySupportProvider
 import com.intellij.debugger.streams.lib.impl.StreamExLibrarySupportProvider
 import com.intellij.execution.configurations.JavaParameters
