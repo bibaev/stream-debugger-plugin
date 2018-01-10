@@ -29,6 +29,7 @@ import com.intellij.debugger.streams.ui.impl.ElementChooserImpl;
 import com.intellij.debugger.streams.ui.impl.EvaluationAwareTraceWindow;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.debugger.streams.wrapper.StreamChainBuilder;
+import com.intellij.lang.Language;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -46,6 +47,7 @@ import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiEditorUtil;
+import com.intellij.util.PlatformUtils;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebuggerManager;
 import com.intellij.xdebugger.impl.XDebugSessionImpl;
@@ -58,11 +60,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 /**
  * @author Vitaliy.Bibaev
  */
 public class TraceStreamAction extends AnAction {
   private static final Logger LOG = Logger.getInstance(TraceStreamAction.class);
+  private static final boolean IS_ANDROID_STUDIO = "AndroidStudio".equals(PlatformUtils.getPlatformPrefix());
 
   private final DebuggerPositionResolver myPositionResolver = new DebuggerPositionResolverImpl();
   private final List<SupportedLibrary> mySupportedLibraries =
@@ -79,7 +83,8 @@ public class TraceStreamAction extends AnAction {
       presentation.setEnabled(false);
     }
     else {
-      if (mySupportedLanguages.contains(element.getLanguage().getID())) {
+      final Language language = element.getLanguage();
+      if (mySupportedLanguages.contains(language.getID()) && isActionEnabled(language)) {
         presentation.setVisible(true);
         presentation.setEnabled(isChainExists(element));
       }
@@ -178,6 +183,10 @@ public class TraceStreamAction extends AnAction {
   private static XDebugSession getCurrentSession(@NotNull AnActionEvent e) {
     final Project project = e.getProject();
     return project == null ? null : XDebuggerManager.getInstance(project).getCurrentSession();
+  }
+
+  private static boolean isActionEnabled(@NotNull Language language) {
+    return !(IS_ANDROID_STUDIO && language.is(JavaLanguage.INSTANCE));
   }
 
   private static boolean isJdkAtLeast9(@NotNull Project project, @NotNull PsiElement element) {
