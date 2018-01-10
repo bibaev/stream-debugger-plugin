@@ -27,15 +27,15 @@
 
       <p>In the latter mode, you can switch between operations manually using the tabs on top.</p>
 
-      <p> Warning: debugging of java stream chains in the Android Studio IDE is disabled. Please, install
-       the Kotlin Sequence Debugger to debug kotlin sequence chains. </p>
+      <p> Warning: debugging of java stream chains in the Android Studio IDE is disabled. Use
+       the <a href="https://plugins.jetbrains.com/plugin/10301-kotlin-sequence-debugger">Kotlin Sequence Debugger</a> to debug kotlin sequence chains. </p>
     ]]></description>
 
   <change-notes><![CDATA[
       0.1.6 <br>
         <ul>
             <li> Add extension point to support new libraries/languages </li>
-            <li> Support Android Studio 3.0.* </li>
+            <li> Support Android Studio 3.0.* (only for Kotlin Sequence Debugger plugin) </li>
             <li> Bug-fixes and minor improvements </li>
         </ul>
       0.1.5 <br>
