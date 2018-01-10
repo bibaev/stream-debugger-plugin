@@ -27,6 +27,11 @@
 
       <p>In the latter mode, you can switch between operations manually using the tabs on top.</p>
 
+      <p>The plugin is still under development, so expect a couple of glitches here and there, and, of course, we really appreciate your
+      feedback, including error reports, and we have set up an
+      <a href="https://youtrack.jetbrains.com/issues?q=Subsystem:%20%7BDebugger.%20Streams%7D">issue tracker</a> just for that.
+      </p>
+
       <p> Warning: debugging of java stream chains in the Android Studio IDE is disabled. Use
        the <a href="https://plugins.jetbrains.com/plugin/10301-kotlin-sequence-debugger">Kotlin Sequence Debugger</a> to debug kotlin sequence chains. </p>
     ]]></description>
