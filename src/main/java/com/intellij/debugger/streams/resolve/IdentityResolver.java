@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2017 JetBrains s.r.o.
+ * Copyright 2000-2018 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.Map;
  * @author Vitaliy.Bibaev
  */
 public class IdentityResolver implements ValuesOrderResolver {
+  private static final Object NULL_MARKER = new Object();
   @NotNull
   @Override
   public Result resolve(@NotNull TraceInfo info) {
@@ -44,25 +45,32 @@ public class IdentityResolver implements ValuesOrderResolver {
       .of(after.keySet())
       .sorted()
       .map(after::get)
-      .groupingBy(TraceUtil::extractKey);
+      .groupingBy(IdentityResolver::extractKey);
+    final Map<Object, Integer> key2Index = new HashMap<>();
 
     for (final TraceElement element : before.values()) {
-      final Object value = TraceUtil.extractKey(element);
+      final Object key = extractKey(element);
 
-      final List<TraceElement> elements = grouped.get(value);
+      final List<TraceElement> elements = grouped.get(key);
       if (elements == null || elements.isEmpty()) {
         direct.put(element, Collections.emptyList());
         continue;
       }
 
-      final TraceElement afterItem = elements.get(0);
+      final int nextIndex = key2Index.getOrDefault(key, -1) + 1;
+      key2Index.put(key, nextIndex);
+      final TraceElement afterItem = elements.get(nextIndex);
 
       direct.put(element, Collections.singletonList(afterItem));
       reverse.put(afterItem, Collections.singletonList(element));
-
-      grouped.put(value, elements.isEmpty() ? Collections.emptyList() : elements.subList(1, elements.size()));
     }
 
     return Result.of(direct, reverse);
+  }
+
+  @NotNull
+  private static Object extractKey(@NotNull TraceElement element) {
+    final Object key = TraceUtil.extractKey(element);
+    return key == null ? NULL_MARKER : key;
   }
 }

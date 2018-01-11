@@ -15,7 +15,7 @@
  */
 package com.intellij.debugger.streams.chain.positive;
 
-import com.intellij.debugger.streams.chain.StreamChainBuilderTestCase;
+import com.intellij.debugger.streams.test.StreamChainBuilderTestCase;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import org.jetbrains.annotations.NotNull;
 

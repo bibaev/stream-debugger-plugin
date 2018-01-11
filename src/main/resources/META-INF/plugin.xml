@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>org.jetbrains.debugger.streams</id>
   <name>Java Stream Debugger</name>
-  <version>0.1.5</version>
+  <version>0.1.6</version>
   <vendor url="https://www.jetbrains.com">JetBrains</vendor>
 
   <description><![CDATA[
@@ -31,9 +31,18 @@
       feedback, including error reports, and we have set up an
       <a href="https://youtrack.jetbrains.com/issues?q=Subsystem:%20%7BDebugger.%20Streams%7D">issue tracker</a> just for that.
       </p>
+
+      <p> Warning: debugging of java stream chains in the Android Studio IDE is disabled. Use
+       the <a href="https://plugins.jetbrains.com/plugin/10301-kotlin-sequence-debugger">Kotlin Sequence Debugger</a> to debug kotlin sequence chains. </p>
     ]]></description>
 
   <change-notes><![CDATA[
+      0.1.6 <br>
+        <ul>
+            <li> Add extension point to support new libraries/languages </li>
+            <li> Support Android Studio 3.0.* (only for Kotlin Sequence Debugger plugin) </li>
+            <li> Bug-fixes and minor improvements </li>
+        </ul>
       0.1.5 <br>
         <ul>
             <li> Update UI </li>
@@ -61,12 +70,16 @@
   <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
   <idea-version since-build="171" until-build="173.*"/>
 
-  <project-components>
-    <component>
-      <interface-class>com.intellij.debugger.streams.lib.LibraryManager</interface-class>
-      <implementation-class>com.intellij.debugger.streams.lib.impl.LibraryManagerImpl</implementation-class>
-    </component>
-  </project-components>
+  <depends>com.intellij.modules.java</depends>
+
+  <extensionPoints>
+    <extensionPoint name="librarySupport" interface="com.intellij.debugger.streams.lib.LibrarySupportProvider"/>
+  </extensionPoints>
+
+  <extensions defaultExtensionNs="org.jetbrains.debugger.streams">
+    <librarySupport implementation="com.intellij.debugger.streams.lib.impl.StandardLibrarySupportProvider"/>
+    <librarySupport implementation="com.intellij.debugger.streams.lib.impl.StreamExLibrarySupportProvider"/>
+  </extensions>
 
   <actions>
     <action id="StreamTracerAction"

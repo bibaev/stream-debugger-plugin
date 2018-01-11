@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2017 JetBrains s.r.o.
+ * Copyright 2000-2018 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams.trace.dsl
+package com.intellij.debugger.streams.test
 
+import com.intellij.debugger.streams.trace.dsl.CodeContext
+import com.intellij.debugger.streams.trace.dsl.Dsl
 import com.intellij.debugger.streams.trace.dsl.impl.TextExpression
-import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.exceptionCases.AbstractExceptionCase
 import com.intellij.testFramework.fixtures.LightCodeInsightFixtureTestCase
 
 /**
  * @author Vitaliy.Bibaev
  */
-abstract class DslTestCase(private val directoryName: String, private val dsl: Dsl) : LightCodeInsightFixtureTestCase() {
+abstract class DslTestCase(private val dsl: Dsl) : LightCodeInsightFixtureTestCase() {
   fun testCall() {
     doTest {
       call("this".expr, "method")
@@ -434,6 +435,6 @@ abstract class DslTestCase(private val directoryName: String, private val dsl: D
 
   private fun check(actualText: String) {
     val testName = getTestName(true)
-    UsefulTestCase.assertSameLinesWithFile("testData/dsl/$directoryName/$testName.out", actualText, false)
+    assertSameLinesWithFile("$testDataPath/$testName.out", actualText, false)
   }
 }

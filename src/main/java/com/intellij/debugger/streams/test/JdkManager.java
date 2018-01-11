@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2017 JetBrains s.r.o.
+ * Copyright 2000-2018 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.debugger.streams;
+package com.intellij.debugger.streams.test;
 
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.Sdk;
@@ -24,8 +24,8 @@ import java.io.File;
 /**
  * @author Vitaliy.Bibaev
  */
-public class JdkManager {
-  public static final String JDK18_PATH;
+class JdkManager {
+  static final String JDK18_PATH;
 
   private static final String MOCK_JDK_DIR_NAME_PREFIX = "mockJDK-";
 
@@ -37,7 +37,7 @@ public class JdkManager {
     JDK18_PATH = new File("java/" + MOCK_JDK_DIR_NAME_PREFIX + "1.8").getAbsolutePath();
   }
 
-  public static Sdk getMockJdk18() {
+  static Sdk getMockJdk18() {
     return Holder.JDK18;
   }
 }

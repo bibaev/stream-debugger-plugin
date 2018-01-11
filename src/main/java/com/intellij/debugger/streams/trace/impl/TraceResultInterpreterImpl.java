@@ -1,21 +1,7 @@
-/*
- * Copyright 2000-2017 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2000-2017 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package com.intellij.debugger.streams.trace.impl;
 
-import com.intellij.debugger.streams.lib.LibraryManager;
+import com.intellij.debugger.streams.lib.InterpreterFactory;
 import com.intellij.debugger.streams.trace.CallTraceInterpreter;
 import com.intellij.debugger.streams.trace.TraceInfo;
 import com.intellij.debugger.streams.trace.TraceResultInterpreter;
@@ -24,7 +10,6 @@ import com.intellij.debugger.streams.trace.impl.interpret.ValuesOrderInfo;
 import com.intellij.debugger.streams.wrapper.StreamCall;
 import com.intellij.debugger.streams.wrapper.StreamChain;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import com.sun.jdi.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,10 +22,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class TraceResultInterpreterImpl implements TraceResultInterpreter {
   private static final Logger LOG = Logger.getInstance(TraceResultInterpreterImpl.class);
-  @NotNull private final Project myProject;
+  private final InterpreterFactory myInterpreterFactory;
 
-  public TraceResultInterpreterImpl(@NotNull Project project) {
-    myProject = project;
+  public TraceResultInterpreterImpl(@NotNull InterpreterFactory interpreterFactory) {
+    myInterpreterFactory = interpreterFactory;
   }
 
   @NotNull
@@ -63,8 +48,7 @@ public class TraceResultInterpreterImpl implements TraceResultInterpreter {
     for (int i = 0; i < callCount; i++) {
       final StreamCall call = chain.getCall(i);
       final Value trace = info.getValue(i);
-      final CallTraceInterpreter interpreter =
-        LibraryManager.getInstance(myProject).getLibrary(call).getInterpreterFactory().getInterpreter(call.getName());
+      final CallTraceInterpreter interpreter = myInterpreterFactory.getInterpreter(call.getName());
 
       final TraceInfo traceInfo = trace == null ? ValuesOrderInfo.empty(call) : interpreter.resolve(call, trace);
       result.add(traceInfo);
@@ -73,7 +57,7 @@ public class TraceResultInterpreterImpl implements TraceResultInterpreter {
     return result;
   }
 
-  private void logTime(@NotNull Value elapsedTimeArray) {
+  private static void logTime(@NotNull Value elapsedTimeArray) {
     final Value elapsedTime = ((ArrayReference)elapsedTimeArray).getValue(0);
     final long elapsedNanoseconds = ((LongValue)elapsedTime).value();
     final long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(elapsedNanoseconds);
